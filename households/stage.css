@@ -1,0 +1,72 @@
+/* Households stage: map fills the screen, team panels pop up as retro dialogs. */
+@font-face{font-family:"Jersey 10";src:url("assets/fonts/Jersey10-Regular.ttf") format("truetype");font-display:swap}
+body.hh-stage{--pixel:"Jersey 10",var(--mono)}
+body.hh-stage .team{font-synthesis:none;font-weight:400}
+/* Dark theme only: warm charcoal with still static on the page and dialogs; card faces stay plain */
+html.hh-stage[data-theme=dark]{--bg:#28251f;--soft:#36322a;--line:#4d473d;--faint:#5c564b}
+html.hh-stage[data-theme=dark],html.hh-stage[data-theme=dark] body{background:#28251f var(--static)}
+html.hh-stage[data-theme=dark] body.hh-stage .team{background:#28251f var(--static)}
+body.hh-stage main{grid-template-rows:auto minmax(0,1fr) auto}
+body.hh-stage .shared-map{border:0}
+body.hh-stage #shared-canvas{cursor:pointer}
+body.hh-stage #shared-canvas:focus-visible{outline:2px solid var(--ink);outline-offset:-2px}
+.map-footer{position:relative;min-width:0;overflow:hidden;height:34px;font:26px/34px var(--pixel);letter-spacing:.08em;color:var(--ink);font-synthesis:none}
+.map-footer span{position:absolute;top:0;transform:translateX(-50%);white-space:nowrap}
+.map-footer .home{left:max(calc(50% + var(--cw) * (var(--home) - .5)),2.2em)}.map-footer .school{left:calc(50% + var(--cw) * (var(--school) - .5))}
+
+.modal-close:focus-visible,body.hh-stage .team button:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+
+/* The dialog layer: closed panels stay in the DOM so the game keeps driving them */
+body.hh-stage #teams{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;grid-template-columns:none;pointer-events:none;padding:16px;margin:0}
+body.hh-stage #teams.has-open{pointer-events:auto;background:rgba(0,0,0,.45)}
+body.hh-stage .team{font-family:var(--pixel);display:none;width:min(640px,100%);max-height:calc(100dvh - 32px);overflow:auto;background:var(--bg);border:4px solid var(--ink);box-shadow:8px 8px 0 rgba(0,0,0,.65),inset 0 0 0 2px var(--bg),inset 0 0 0 4px var(--faint);padding:16px 18px 18px}
+body.hh-stage .team.open{display:block;animation:hh-pop .18s steps(4,end)}
+@keyframes hh-pop{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){body.hh-stage .team.open{animation:none}}
+body.hh-stage .team .team-name{font-family:var(--pixel);font-size:32px;line-height:1.1;height:auto;margin-bottom:4px;letter-spacing:.04em;text-transform:uppercase;align-items:center}
+.modal-close{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;border:2px solid var(--close);background:var(--bg);color:var(--close);cursor:pointer;font:24px/1 var(--pixel)}
+/* Close button in the game's muted red (the RED context colour) */
+body.hh-stage{--close:#d06c58}html.hh-stage[data-theme=light] body.hh-stage{--close:#a74638}
+.modal-close:hover{background:var(--close);color:var(--bg)}
+.modal-close:focus-visible{outline-color:var(--close)}
+
+/* Retro cards: the frame keeps the context colour; the corner pattern names it */
+body.hh-stage .team .cards{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px}
+body.hh-stage .cardbox{border:6px solid var(--context);box-shadow:none;background:var(--bg)}
+body.hh-stage .cardbox.indicator{border-style:dashed;border-width:6px}
+/* Latest revealed card: a soft halo in its own colour, the cue the audience matches */
+body.hh-stage .cardbox.latest{outline:none;box-shadow:0 0 12px 3px color-mix(in srgb,var(--context) 50%,transparent)}
+body.hh-stage .team .cardlabel{height:26px;padding:4px 6px;align-items:center;color:var(--ink);font-size:18px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+body.hh-stage .cardbox:has(.up) .cardlabel{color:var(--context)}
+body.hh-stage .ctx-mark{width:10px;height:10px;display:block}
+body.hh-stage .team .card{height:auto;aspect-ratio:1/1.05;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--dim)}
+body.hh-stage .team .card.up{color:var(--ink)}
+body.hh-stage .team .card.hazard{background:var(--ink);color:var(--bg)}
+body.hh-stage .team .card .sym.pixel{width:66%;height:auto;max-width:96px;stroke:none;image-rendering:pixelated}
+body.hh-stage .team .card{font-family:var(--pixel)}
+body.hh-stage .team .card i{display:block;font-style:normal;font-size:26px;letter-spacing:.06em;text-transform:uppercase;line-height:1}
+body.hh-stage .team .card>.plabel{font-size:44px;line-height:1}
+body.hh-stage .team .card:not(.up):not(:disabled):hover{background:var(--soft)}
+
+/* Retro buttons and poll bars */
+body.hh-stage .team .easy-actions{margin-top:14px;gap:8px}
+body.hh-stage .team .easy-actions button,body.hh-stage .team .reset-team{border:2px solid var(--ink);border-radius:0;box-shadow:3px 3px 0 var(--faint);padding:8px 14px;font:22px/1 var(--pixel);letter-spacing:.06em;text-transform:uppercase}
+body.hh-stage .team .reset-team{padding:6px 10px;font-size:18px}
+body.hh-stage .team .easy-actions button:active:not(:disabled){transform:translate(2px,2px);box-shadow:1px 1px 0 var(--faint)}
+body.hh-stage .team .easy-actions button:disabled{box-shadow:none}
+body.hh-stage .team .polls{margin-top:12px}
+body.hh-stage .team .poll-row{grid-template-columns:150px minmax(0,1fr) 52px;font-size:21px;letter-spacing:.05em;margin:7px 0}
+body.hh-stage .team .poll{font-size:21px}
+body.hh-stage .team .track{height:12px;border:2px solid var(--ink);background:transparent;padding:1px}
+body.hh-stage .team .track>div{height:100%;background:repeating-linear-gradient(90deg,var(--ink) 0 7px,transparent 7px 9px)}
+body.hh-stage .team .outcome{font-size:34px;letter-spacing:.1em}
+body.hh-stage .team .tokens{gap:4px;align-items:center}
+body.hh-stage .team .tokens .coin{width:26px;height:26px;display:block;image-rendering:pixelated}
+body.hh-stage .team .tokens .coin.spent{color:var(--dim);opacity:.8}
+@media (max-width:600px){
+ body.hh-stage .team{padding:12px}
+ body.hh-stage .team .cards{gap:6px}
+ body.hh-stage .team .poll-row{grid-template-columns:110px minmax(0,1fr) 42px;font-size:17px}
+ body.hh-stage .team .cardlabel{font-size:14px}body.hh-stage .team .card i{font-size:18px}
+}
+

@@ -44,6 +44,13 @@ h2{font-size:11px;color:var(--dim);letter-spacing:.08em;font-weight:400;margin:1
 .cue .cardbox{display:inline-block;min-width:150px}
 .cue .wl{display:inline-block;min-width:120px}
 #ask .avoid{padding:10px 0 0}
+.cardbox.hh{border-width:3px;box-shadow:3px 3px 0 rgba(0,0,0,.5)}
+.cardbox.hh .cardlabel{align-items:center;padding:4px 5px}
+.cardbox.hh .card{height:66px;gap:5px}
+.cardbox.hh .sym.pixel{width:40px;height:40px;stroke:none;fill:initial}
+.cardbox.hh .ptext{height:6px;display:block}
+.cardbox.hh .card i .ptext{height:7px}
+.ctx-mark{width:9px;height:9px;display:block}
 </style>
 </head>
 <body>
@@ -60,7 +67,7 @@ import {SYMBOLS} from '/paperweights/web/symbols.js';
 const $ = s => document.querySelector(s);
 const PALETTE = {RED: ['#a74638', '#d06c58'], BLUE: ['#316b8c', '#6ca4c4'], AMBER: ['#8b681d', '#bd9c4e'], GREEN: ['#39785c', '#75ae8e'], PURPLE: ['#72528e', '#ad91c4'], PINK: ['#a24b7d', '#ce83ae']};
 const CONTEXT = {C01: 'RED', C02: 'BLUE', C03: 'AMBER', C04: 'GREEN', C05: 'PURPLE', C06: 'PINK'};
-const HH = (await (await fetch('/households/assets/icons.json')).json()).primary;
+import { pixelIcons as HH, pixelText, contextMark } from '/households/pixel-cards.js';
 let theme = 'dark';
 try { theme = localStorage.getItem('paperweights.theme.v1') === 'light' ? 'light' : 'dark'; } catch {}
 document.documentElement.dataset.theme = theme;
@@ -74,7 +81,8 @@ const icon = (svg) => { const n = ++uid; return svg.replace(/id="(\w+)"/g, `id="
 const split = key => { const i = key.indexOf(':'); return {color: key.slice(0, i), word: key.slice(i + 1)}; };
 const wordLeft = key => { const w = split(key); return `<span class="wl" style="--c:${ink(w.color)}"><small>${w.color}</small><b>${esc(w.word)}</b></span>`; };
 const wordRight = key => { const w = split(key); return `<span class="wr" style="--c:${ink(w.color)}"><b>${esc(w.word)}</b><small>(${w.color})</small></span>`; };
-const hhCard = (ctx, cat, value) => { const color = CONTEXT[ctx]; return `<span class="cardbox" style="--context:${ink(color)}"><span class="cardlabel"><span>${color}</span><span>${cat.toUpperCase()}</span></span><span class="card">${icon(HH[cat][value])}<i>${value.toUpperCase()}</i></span></span>`; };
+// Retro card faces as on the projector: the frame colour and corner pattern carry the context.
+const hhCard = (ctx, cat, value) => { const color = CONTEXT[ctx]; return `<span class="cardbox hh" style="--context:${ink(color)}" role="img" aria-label="${color} ${cat}: ${value}"><span class="cardlabel">${contextMark(ctx)}${pixelText(cat)}</span><span class="card">${HH[cat][value]}<i>${pixelText(value)}</i></span></span>`; };
 const roverCard = (cat, value) => `<span class="cardbox"><span class="cardlabel"><span></span><span>${cat.toUpperCase()}</span></span><span class="card">${icon(SYMBOLS[cat][value])}<i>${value.toUpperCase()}</i></span></span>`;
 const post = (path, body) => fetch('/api/room' + path, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)}).then(r => r.json());
 

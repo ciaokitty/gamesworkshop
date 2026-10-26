@@ -87,7 +87,8 @@ class Room:
         words = deck.word_sheets(self.size, self.sentence_deck)
         return {'seat': seat, 'team': deck.team(seat),
                 'words': words[seat - 1] if seat <= len(words) else [],
-                'rover': deck.rover_squares(seat), 'household': deck.household_rows(seat)}
+                'rover': deck.rover_squares(seat), 'household': deck.household_rows(seat),
+                'extTeam': deck.ext_team(seat), 'extended': deck.extended_rows(seat), 'home': deck.home_rows(seat)}
 
     # ---- votes -----------------------------------------------------------
     def open(self, key, kind, cue=None, visible=None, exclude=()):
@@ -98,7 +99,7 @@ class Room:
         now = time.time()
         seats = self.word_bot_seats() if kind == 'word' else self.bot_seats()
         for seat in seats:
-            if (key == 'word' or deck.team(seat) == key) and (kind == 'word' or random.random() < BOT_TURNOUT):
+            if deck.in_vote(seat, key) and (kind == 'word' or random.random() < BOT_TURNOUT):
                 heapq.heappush(self.timers, (now + random.uniform(*BOT_DELAY), vote['id'], key, seat))
         return vote
 
@@ -111,6 +112,9 @@ class Room:
         s = self.sheet(seat)
         if vote['kind'] == 'word':
             return [r[1] for r in s['words'] if r[0] == vote['cue']]
+        if vote['kind'] in ('extended', 'home'):
+            rows = s['home'] if vote['kind'] == 'home' else s['extended']
+            return [r['flip'] for r in rows if r['key'] == vote['cue'] and r['flip'] not in vote['exclude']]
         if vote['kind'] == 'household':
             return [r['flip'] for r in s['household']
                     if r['key'] == vote['cue'] and r['flip'] not in vote['exclude']]
@@ -146,7 +150,7 @@ class Room:
                 counts[choice] = counts.get(choice, 0) + 1
         seats = (range(1, len(deck.word_sheets(self.size, self.sentence_deck)) + 1)
                  if vote['kind'] == 'word' else sorted(set(self.phones.values()) | set(self.bot_seats())))
-        eligible = [s for s in seats if vote['key'] == 'word' or deck.team(s) == vote['key']]
+        eligible = [s for s in seats if deck.in_vote(s, vote['key'])]
         coverage_key = (self.sentence_deck, tuple(eligible))
         if vote.get('_coverage_key') != coverage_key:
             vote['_matching'] = sum(bool(self.choices(vote, seat)) for seat in eligible)
@@ -168,9 +172,9 @@ class Room:
             return None
         self.seen[pid] = time.time()
         team = deck.team(seat)
-        vote = self.votes.get('word') or self.votes.get(team)
-        if self.votes.get(team) and self.votes.get('word'):
-            vote = max(self.votes['word'], self.votes[team], key=lambda v: v['opened'])
+        # The newest open vote this seat answers: words, its room team, its Extended team or the home.
+        mine = [v for k in ('word', team, 'E' + deck.ext_team(seat), deck.HOME_KEY) if (v := self.votes.get(k))]
+        vote = max(mine, key=lambda v: v['opened']) if mine else None
         active = None
         if vote:
             active = {'id': vote['id'], 'kind': vote['kind'], 'cue': vote['cue'], 'visible': vote['visible'],
@@ -223,6 +227,8 @@ class Handler(SimpleHTTPRequestHandler):
             activity = q.get('scenario', 'rover')
         elif url.path in ('/households/', '/households/index.html'):
             activity = 'icons'
+        elif url.path in ('/extended-households/', '/extended-households/index.html'):
+            activity = 'extended-households'
         if activity is not None:
             with ROOM.lock:
                 ROOM.enter(activity)
@@ -271,7 +277,10 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.json(ROOM.summary())
             if path == '/open':
                 key = body.get('key')
-                if key not in ('word', *deck.TEAMS) or body.get('kind') not in ('word', 'rover', 'household'):
+                if (key not in ('word', *deck.TEAMS, *deck.EXT_KEYS, deck.HOME_KEY)
+                        or body.get('kind') not in ('word', 'rover', 'household', 'extended', 'home')
+                        or (key in deck.EXT_KEYS) != (body.get('kind') == 'extended')
+                        or (key == deck.HOME_KEY) != (body.get('kind') == 'home')):
                     return self.json({'error': 'bad vote'}, 400)
                 if body.get('kind') == 'word' and body.get('deck') in ('mixed', 'prior'):
                     ROOM.sentence_deck = body['deck']
@@ -295,7 +304,7 @@ class Handler(SimpleHTTPRequestHandler):
                     return self.json({'error': 'no match'})
                 if vote['kind'] == 'rover' and body.get('choice') not in ('go', 'avoid'):
                     return self.json({'error': 'bad choice'})
-                if vote['key'] != 'word' and deck.team(seat) != vote['key']:
+                if not deck.in_vote(seat, vote['key']):
                     return self.json({'error': 'other team'})
                 ROOM.ballot(vote, seat, body['choice'])
                 return self.json({})

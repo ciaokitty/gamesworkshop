@@ -19,7 +19,7 @@ Pages served by the plain 8684 server find no `/api/room` and keep their simulat
 | Game | Who | Phone shows | Host shows |
 | --- | --- | --- | --- |
 | Sentences, Majority word | everyone | Tap the word that matches, if any | bars; click one to accept, or Accept = top |
-| Rover Competitive, Risks | the rep's team | AVOID if one of these is on Team X's screen | GO / AVOID percentages under the team |
+| Rover Competitive, Risks | the rep's team | Team X: GO or AVOID? (no cards; the data side shows the Households dropout to avoid) | GO / AVOID percentages under the team |
 | Households Competitive, Indicators | the rep's team | Tap the row that matches (latest card) | FLIP percentages under the AI estimate |
 
 Teams: sheet k is team `ABCD[(k-1) % 4]`. A rep's Go/Avoid, a card flip or Reset closes that vote. Navigating to another activity (including landing, collaborative and Icons) closes old votes without clearing the roster.

@@ -26,14 +26,14 @@ for(let seed=0;seed<120;seed++){
    mutated.fatal=!mutated.fatal;
    for(const c of categories.filter(c=>!revealed.includes(c)))mutated.targetCues[c].value=c==='attendance'?'irregular':c==='harvest'?'failed':c==='cash'?'loan':'storm';
    assert.deepEqual(p,poll(pack,mutated,revealed,3));
-   assert.equal(Object.values(p.counts).reduce((a,b)=>a+b,0),50);
+   assert.equal(Object.values(p.counts).reduce((a,b)=>a+b,0),team.audienceCount);
    assert.equal(p.counts[row.initialCategory],0);
    const matching=pack.historiesByTeam[team.id].filter(h=>h.contextId===row.contextId&&h.targetCues[row.initialCategory].value===row.targetCues[row.initialCategory].value);
    if(matching.length){const expected=(matching.filter(h=>h.fatal).length+1)/(matching.length+2);assert.ok(Math.abs(p.counts.avoid/(p.counts.go+p.counts.avoid)-expected)<.05,'Decision share must track historical risk');}
    const direct=poll(pack,row,[...revealed,'attendance'],2);
    assert.deepEqual(direct,poll(pack,{...row,fatal:!row.fatal},[...revealed,'attendance'],2),'Attendance lookup must not read outcome');
    for(const c of categories)inspections[c]+=p.counts[c];
-   const exhausted=poll(pack,row,revealed,0);assert.equal(exhausted.counts.go+exhausted.counts.avoid,50);
+   const exhausted=poll(pack,row,revealed,0);assert.equal(exhausted.counts.go+exhausted.counts.avoid,team.audienceCount);
   }
  }
 }

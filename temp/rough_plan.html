@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pixboy Retro 2D SVG Game Asset Studio — Data Literacy Workshop</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Press+Start+2P&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --px-bg: #141218;
+      --px-panel: #1E1B24;
+      --px-fg: #F4F1DE;
+      --px-mid: #5A566E;
+    }
+    body {
+      background-color: #0E0C12;
+      color: #F4F1DE;
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+    }
+    .font-pixel {
+      font-family: 'Press Start 2P', 'Courier New', monospace;
+      letter-spacing: 1px;
+    }
+    .font-mono-code {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .pixel-border {
+      border: 3px solid #F4F1DE;
+      box-shadow: 4px 4px 0px #000000;
+    }
+    .pixel-border-sm {
+      border: 2px solid #F4F1DE;
+      box-shadow: 3px 3px 0px #000000;
+    }
+    .pixel-btn {
+      border: 2px solid #F4F1DE;
+      box-shadow: 3px 3px 0px #000000;
+      transition: transform 0.08s ease, box-shadow 0.08s ease;
+    }
+    .pixel-btn:hover:not(:disabled) {
+      transform: translate(-1px, -1px);
+      box-shadow: 4px 4px 0px #000000;
+    }
+    .pixel-btn:active:not(:disabled) {
+      transform: translate(2px, 2px);
+      box-shadow: 1px 1px 0px #000000;
+    }
+    /* Optional CRT Scanlines Effect (Pixboy Old TV Screen feature) */
+    .crt-overlay {
+      background: linear-gradient(
+        rgba(18, 16, 16, 0) 50%, 
+        rgba(0, 0, 0, 0.32) 50%
+      );
+      background-size: 100% 4px;
+      pointer-events: none;
+    }
+    svg {
+      shape-rendering: crispEdges;
+      image-rendering: pixelated;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Top Header / Retro HUD -->
+  <header class="bg-[#18151E] border-b-4 border-[#F4F1DE] px-4 py-3 sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-[#FF5964] pixel-border-sm flex items-center justify-center font-pixel text-xs text-[#141218] font-bold">
+          1B
+        </div>
+        <div>
+          <h1 class="font-pixel text-xs sm:text-sm text-[#F4F1DE] tracking-wider">PIXBOY SVG ASSET STUDIO</h1>
+          <p class="text-xs text-[#A6A2B8] mt-0.5">Data Literacy Workshop • 4 NGOs • 4 Households • 4 Kids • 1 School</p>
+        </div>
+      </div>
+
+      <!-- Navigation & Controls -->
+      <div class="flex flex-wrap items-center gap-2">
+        <button id="tabBtnMap" class="pixel-btn px-3 py-2 text-xs font-pixel bg-[#FF5964] text-[#141218]">
+          ★ LIVE MAP & BOARD
+        </button>
+        <button id="tabBtnSprites" class="pixel-btn px-3 py-2 text-xs font-pixel bg-[#282433] text-[#F4F1DE]">
+          SPRITE SHEET (16 SVGs)
+        </button>
+        <button id="btnToggleCrt" class="pixel-btn px-2.5 py-2 text-xs font-mono-code bg-[#282433] text-[#00F5D4]" title="Toggle Pixboy Old-TV CRT Scanlines">
+          CRT: ON
+        </button>
+        <button id="btnToggleSfx" class="pixel-btn px-2.5 py-2 text-xs font-mono-code bg-[#282433] text-[#FFBE0B]" title="Toggle Retro Chiptune Sound Effects">
+          SFX: ON
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Palette Bar (Inspired by Pixboy's 24 Retro Palettes) -->
+  <section class="bg-[#141218] border-b-2 border-[#322E40] px-4 py-2.5">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="font-pixel text-[10px] text-[#A6A2B8] mr-1">RETRO PALETTE:</span>
+        <button data-palette="ngo_teams" class="palette-btn pixel-btn px-2.5 py-1 text-xs font-semibold bg-[#F4F1DE] text-[#141218] flex items-center gap-1.5">
+          <span class="inline-block w-2.5 h-2.5 bg-[#FF5964]"></span>
+          <span class="inline-block w-2.5 h-2.5 bg-[#00F5D4]"></span>
+          <span class="inline-block w-2.5 h-2.5 bg-[#FFBE0B]"></span>
+          <span>4-NGO Retro Teams</span>
+        </button>
+        <button data-palette="pixboy_1bit" class="palette-btn pixel-btn px-2.5 py-1 text-xs font-semibold bg-[#221F2B] text-[#F4F1DE] flex items-center gap-1.5">
+          <span class="inline-block w-2.5 h-2.5 bg-[#F4F1DE]"></span>
+          <span class="inline-block w-2.5 h-2.5 bg-[#FF5964]"></span>
+          <span>Pixboy 1-Bit Coral</span>
+        </button>
+        <button data-palette="gameboy_dmg" class="palette-btn pixel-btn px-2.5 py-1 text-xs font-semibold bg-[#221F2B] text-[#9BBC0F] flex items-center gap-1.5">
+          <span class="inline-block w-2.5 h-2.5 bg-[#9BBC0F]"></span>
+          <span class="inline-block w-2.5 h-2.5 bg-[#306230]"></span>
+          <span>DMG Pocket Green</span>
+        </button>
+        <button data-palette="crt_amber" class="palette-btn pixel-btn px-2.5 py-1 text-xs font-semibold bg-[#221F2B] text-[#FFB000] flex items-center gap-1.5">
+          <span class="inline-block w-2.5 h-2.5 bg-[#FFB000]"></span>
+          <span class="inline-block w-2.5 h-2.5 bg-[#FF5500]"></span>
+          <span>Amber CRT</span>
+        </button>
+        <button data-palette="cga_arcade" class="palette-btn pixel-btn px-2.5 py-1 text-xs font-semibold bg-[#221F2B] text-[#00F5D4] flex items-center gap-1.5">
+          <span class="inline-block w-2.5 h-2.5 bg-[#00F5D4]"></span>
+          <span class="inline-block w-2.5 h-2.5 bg-[#FF2A85]"></span>
+          <span>CGA Cyan/Magenta</span>
+        </button>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button id="btnDownloadCurrentMapSvg" class="pixel-btn px-3 py-1.5 text-xs font-bold bg-[#00F5D4] text-[#141218]">
+          ⬇ Download Full Map (.SVG)
+        </button>
+        <button id="btnCopyCurrentMapSvg" class="pixel-btn px-3 py-1.5 text-xs font-bold bg-[#282433] text-[#F4F1DE]">
+          📋 Copy Map SVG Code
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Workspace Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-5">
+
+    <!-- ========================================== -->
+    <!-- VIEW 1: INTERACTIVE MAP & WORKSHOP BOARD   -->
+    <!-- ========================================== -->
+    <div id="viewMap" class="space-y-5">
+
+      <!-- Map Mode Switcher & Quick Controls -->
+      <div class="bg-[#1A1722] pixel-border p-3.5 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="font-pixel text-[10px] text-[#A6A2B8] mr-1">MAP LAYOUT:</span>
+          <button id="btnLayoutLanes" class="pixel-btn px-3 py-1.5 text-xs font-bold bg-[#FFBE0B] text-[#141218]">
+            1. 2D Platformer Tracks (4 Lanes → School)
+          </button>
+          <button id="btnLayoutCorners" class="pixel-btn px-3 py-1.5 text-xs font-bold bg-[#282433] text-[#F4F1DE]">
+            2. Village Convergence (4 Corners → Center School)
+          </button>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="btnAdvanceAll" class="pixel-btn px-3 py-1.5 text-xs font-bold bg-[#00F5D4] text-[#141218]">
+            +1 Step All Kids
+          </button>
+          <button id="btnResetBoard" class="pixel-btn px-3 py-1.5 text-xs font-bold bg-[#282433] text-[#FF5964]">
+            ↺ Reset Workshop
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Interactive SVG Map Viewport + Side NGO Controls -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+
+        <!-- Left/Center: Live Crisp SVG Game Map Canvas -->
+        <div class="lg:col-span-8 relative bg-[#141218] pixel-border overflow-hidden">
+          <div id="mapSvgContainer" class="w-full"></div>
+          <div id="crtOverlayMap" class="crt-overlay absolute inset-0"></div>
+        </div>
+
+        <!-- Right: 4 NGO Team Decision Controllers -->
+        <div class="lg:col-span-4 space-y-3">
+          <div class="bg-[#1A1722] pixel-border p-3.5">
+            <h2 class="font-pixel text-xs text-[#FFBE0B] mb-1">NGO INTERVENTION CONSOLE</h2>
+            <p class="text-xs text-[#BDB9CC] leading-relaxed">
+              Use this panel during your workshop! When an NGO team reads the household data and makes the right intervention decision, advance their Kid 1 milestone closer to the School. Every change updates the live SVG map immediately.
+            </p>
+          </div>
+
+          <div id="ngoControlCards" class="space-y-3"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- VIEW 2: STANDALONE SVG SPRITE GALLERY      -->
+    <!-- ========================================== -->
+    <div id="viewSprites" class="hidden space-y-5">
+
+      <!-- Category Filter Bar -->
+      <div class="bg-[#1A1722] pixel-border p-3.5 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="font-pixel text-[10px] text-[#A6A2B8] mr-1">FILTER ASSETS:</span>
+          <button data-cat="all" class="cat-btn pixel-btn px-3 py-1.5 text-xs font-bold bg-[#FF5964] text-[#141218]">All Assets (16)</button>
+          <button data-cat="maps" class="cat-btn pixel-btn px-3 py-1.5 text-xs font-bold bg-[#282433] text-[#F4F1DE]">Complete Maps (2)</button>
+          <button data-cat="houses" class="cat-btn pixel-btn px-3 py-1.5 text-xs font-bold bg-[#282433] text-[#F4F1DE]">4 Houses (4)</button>
+          <button data-cat="school" class="cat-btn pixel-btn px-3 py-1.5 text-xs font-bold bg-[#282433] text-[#F4F1DE]">1 School (1)</button>
+          <button data-cat="kids" class="cat-btn pixel-btn px-3 py-1.5 text-xs font-bold bg-[#282433] text-[#F4F1DE]">4 Kids (4)</button>
+          <button data-cat="icons" class="cat-btn pixel-btn px-3 py-1.5 text-xs font-bold bg-[#282433] text-[#F4F1DE]">NGO & Path Icons (5)</button>
+        </div>
+        <div class="text-xs text-[#A6A2B8] font-mono-code">
+          Click <strong class="text-[#F4F1DE]">⬇ .SVG</strong> or <strong class="text-[#F4F1DE]">📋 Copy SVG</strong> on any card
+        </div>
+      </div>
+
+      <!-- Sprite Grid -->
+      <div id="spriteGridContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </div>
+
+  </main>
+
+  <!-- SVG Code Inspector Modal -->
+  <div id="svgModal" class="fixed inset-0 bg-black/80 z-50 hidden items-center justify-center p-4">
+    <div class="bg-[#1A1722] pixel-border max-w-2xl w-full p-5 space-y-4">
+      <div class="flex items-center justify-between border-b-2 border-[#322E40] pb-3">
+        <div>
+          <h3 id="modalTitle" class="font-pixel text-xs sm:text-sm text-[#FFBE0B]">SVG ASSET INSPECTOR</h3>
+          <p id="modalSubtitle" class="text-xs text-[#A6A2B8] font-mono-code mt-1"></p>
+        </div>
+        <button id="btnCloseModal" class="pixel-btn px-3 py-1 text-xs font-bold bg-[#FF5964] text-[#141218]">✕ CLOSE</button>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+        <div id="modalPreviewBox" class="bg-[#141218] pixel-border-sm p-4 flex items-center justify-center min-h-[200px]"></div>
+        <div class="space-y-2">
+          <label class="block text-xs font-mono-code text-[#A6A2B8]">RAW STANDALONE &lt;SVG&gt; MARKUP:</label>
+          <textarea id="modalSvgCode" readonly class="w-full h-40 bg-[#0E0C12] text-[#00F5D4] font-mono-code text-xs p-2.5 border-2 border-[#322E40] focus:outline-none"></textarea>
+          <div class="flex gap-2 pt-1">
+            <button id="btnModalCopy" class="flex-1 pixel-btn py-2 text-xs font-bold bg-[#00F5D4] text-[#141218]">📋 Copy SVG Markup</button>
+            <button id="btnModalDownload" class="flex-1 pixel-btn py-2 text-xs font-bold bg-[#FFBE0B] text-[#141218]">⬇ Download .SVG</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Retro Toast Notification -->
+  <div id="toastBox" class="fixed bottom-5 right-5 z-50 hidden bg-[#00F5D4] text-[#141218] pixel-border px-4 py-2.5 font-pixel text-xs">
+    COPIED TO CLIPBOARD!
+  </div>
+
+  <script>
+    // Embedded Pixel Grids from Generator
+    const SPRITES = [{"id": "house_1", "filename": "01_house_team1_ngo_alpha.svg", "name": "Household 1 (Cottage)", "category": "houses", "team": 1, "badge": "NGO TEAM 1 \u2022 ALPHA", "desc": "Pitched-roof cottage with chimney, shuttered window, and roof pennant flag for Household 1.", "grid": ["..................2222..", "..................21122.", "....33............2222..", "....33............1.....", "...1111....11.....1.....", "....33....1221....1.....", ".........122221...1.....", "........12222221..1.....", ".......1222112221.1.....", "......1222100122211.....", ".....12222111122221.....", "....1222222222222221....", "...111111111111111111...", "....1111111111111111....", "....1100001111222211....", "....1101101111200211....", "....1101101111200211....", "....1100001111202211....", "....1111111111200211....", "....1133333311200211....", "...111111111112002111...", "..33333333333333333333..", ".1111111111111111111111.", "........................"], "w": 24, "h": 24}, {"id": "house_2", "filename": "02_house_team2_ngo_beta.svg", "name": "Household 2 (Townhouse)", "category": "houses", "team": 2, "badge": "NGO TEAM 2 \u2022 BETA", "desc": "Two-story retro home with twin upper windows, front porch, and roof banner for Household 2.", "grid": ["....22222...............", "....211122..............", "....22222...............", "....1.....11111111......", "....1....1222222221.....", "....1...122222222221....", "...111111111111111111...", "....11001111001111001...", "....11001111001111001...", "....11111111111111111...", "...3333333333333333333..", "....11111111111111111...", "....11000111112222211...", "....11010111112000211...", "....11000111112000211...", "....11111111112002211...", "....11000111112000211...", "....11010111112000211...", "....11000111112000211...", "...1111111111120002111..", "..333333333333333333333.", ".11111111111111111111111", "........................", "........................"], "w": 24, "h": 24}, {"id": "house_3", "filename": "03_house_team3_ngo_gamma.svg", "name": "Household 3 (Homestead)", "category": "houses", "team": 3, "badge": "NGO TEAM 3 \u2022 GAMMA", "desc": "Wide rural homestead with textured roof tiles, side shrubs, and roof flag for Household 3.", "grid": ["................22222...", "................211122..", "................22222...", "................1.......", "......111111111111......", ".....12222222222221.....", "....1223223223223221....", "...122222222222222221...", "..11111111111111111111..", "...111111111111111111...", "...112222111100001111...", "...112002111101101111...", "...112002111101101111...", "...112022111100001111...", "...112002111111111111...", ".3.112002113333333311.3.", "333112002111111111111333", ".3.112002111111111111.3.", ".3333333333333333333333.", ".1111111111111111111111.", "........................", "........................", "........................", "........................"], "w": 24, "h": 24}, {"id": "house_4", "filename": "04_house_team4_ngo_delta.svg", "name": "Household 4 (Stepped Cabin)", "category": "houses", "team": 4, "badge": "NGO TEAM 4 \u2022 DELTA", "desc": "Two-tier cabin with upper dormer balcony, symmetric windows, and flag for Household 4.", "grid": ["..........22222.........", "..........211122........", "..........22222.........", "..........1.............", "........111111..........", ".......12222221.........", "......1222112221........", ".....122210012221.......", "....11111111111111......", ".....110011110011.......", ".....110011110011.......", "...111111111111111111...", "..12222222222222222221..", "..11111111111111111111..", "...110001112222110001...", "...110101112002110101...", "...110001112002110001...", "...111111112022111111...", "...113333112002113333...", "..11111111120021111111..", ".3333333333333333333333.", ".1111111111111111111111.", "........................", "........................"], "w": 24, "h": 24}, {"id": "school_central", "filename": "05_school_central_building.svg", "name": "Central Schoolhouse", "category": "school", "team": 0, "badge": "GOAL SANCTUARY", "desc": "40\u00d732 pixel-art school building with belfry tower, waving flag, open-book emblem, 4 classroom windows, and double doors.", "grid": ["...................222222...............", "...................2111122..............", "...................222222...............", "...................1....................", ".................11111..................", "................1222221.................", "...............122222221................", "..............11111111111...............", "...............110010011................", "...............110011011................", "...............110000011................", "..............11111111111...............", "......111111111222222222111111111.......", ".....12222222222111011122222222221......", "....1222222222221010101222222222221.....", "...122222222222211101112222222222221....", "..11111111111111111111111111111111111...", "...111111111111111111111111111111111....", "...110001100011122222221110001100011....", "...110101101011121111121110101101011....", "...110001100011122222221110001100011....", "...111111111111111111111111111111111....", "...333333333333111111111333333333333....", "...110001100011122212221110001100011....", "...110101101011120010021110101101011....", "...110001100011120212021110001100011....", "...111111111111120010021111111111111....", "..11111111111111200100211111111111111...", ".3333333333333331111111333333333333333..", "111111111111111111111111111111111111111.", "............111111111111111.............", "..........1111111111111111111..........."], "w": 40, "h": 32}, {"id": "kid_1", "filename": "06_kid_1_sprite.svg", "name": "Kid 1 (Pixboy Cap & Pack)", "category": "kids", "team": 1, "badge": "HOUSEHOLD 1 STUDENT", "desc": "16\u00d716 retro platformer kid wearing a Pixboy-style cap, school backpack, and sneakers.", "grid": [".....222222.....", "....222222222...", "....00111100....", "....11011011....", "....11111111....", ".....110011.....", "..33.002200.....", ".333122222211...", ".333122112211...", ".333.222222.....", ".....111111.....", "....111..111....", "....11....11....", "...222....222...", "...000....000...", "................"], "w": 16, "h": 16}, {"id": "kid_2", "filename": "07_kid_2_sprite.svg", "name": "Kid 2 (Pigtails & Satchel)", "category": "kids", "team": 2, "badge": "HOUSEHOLD 2 STUDENT", "desc": "16\u00d716 pixel character with twin pigtails, hair ribbons, and cross-body school satchel.", "grid": ["...11.1111.11...", "..111111111111..", "..11.211112.11..", ".....101101.....", ".....111111.....", "......1001......", "....11222211....", "...1122222311...", "...11222233.1...", "....22233222....", "...2222332222...", ".....11..11.....", ".....11..11.....", "....222..222....", "....000..000....", "................"], "w": 16, "h": 16}, {"id": "kid_3", "filename": "08_kid_3_sprite.svg", "name": "Kid 3 (Headband & Bookbag)", "category": "kids", "team": 3, "badge": "HOUSEHOLD 3 STUDENT", "desc": "16\u00d716 determined student sprite with retro action headband, backpack, and mid-stride pose.", "grid": ["....11111111....", "...1111111111...", "..22222222222...", "22..11011011....", "2...11111111....", ".....110011.....", "..33.122221.....", ".333112222111...", ".3331.2112..11..", ".333..2222......", ".....111111.....", "....11....11....", "...11......11...", "..222......222..", "..000......000..", "................"], "w": 16, "h": 16}, {"id": "kid_4", "filename": "09_kid_4_sprite.svg", "name": "Kid 4 (Glasses & Beanie)", "category": "kids", "team": 4, "badge": "HOUSEHOLD 4 STUDENT", "desc": "16\u00d716 pixel student wearing a knitted beanie, big pixel glasses, backpack, and workbook.", "grid": [".....222222.....", "....22122122....", "....22222222....", "...1000110001...", "...1010000101...", "...1000110001...", ".....111111.....", "..33.222222.....", ".333122112211...", ".33312222221222.", ".333.222222.212.", ".....111111.222.", "....111..111....", "....11....11....", "...222....222...", "................"], "w": 16, "h": 16}, {"id": "icon_intervention", "filename": "10_icon_ngo_intervention.svg", "name": "NGO Intervention Shield", "category": "icons", "team": 2, "badge": "TIMELY HELP TOKEN", "desc": "16\u00d716 pixel shield with a heart emblem \u2014 awarded when an NGO team intervenes at the right moment.", "grid": ["....11111111....", "..111222222111..", ".11222222222211.", ".12211222211221.", ".12111122111121.", ".12111111111121.", ".12211111111221.", ".12221111112221.", "..122211112221..", "..122221122221..", "...1222222221...", "....12222221....", ".....112211.....", "......1111......", ".......11.......", "................"], "w": 16, "h": 16}, {"id": "icon_data_lens", "filename": "11_icon_data_literacy_lens.svg", "name": "Data Literacy Magnifier", "category": "icons", "team": 3, "badge": "DATA SIGNAL ICON", "desc": "16\u00d716 magnifying glass inspecting a rising bar chart \u2014 represents analyzing household indicators.", "grid": ["...11111111.....", "..1100000011....", ".110000220011...", ".100022220001...", ".102222221101...", ".102222221101...", ".101111111101...", ".110000000011...", "..11000000111...", "...11111111.11..", "...........1121.", "............1221", ".............122", "..............11", "................", "................"], "w": 16, "h": 16}, {"id": "icon_dropout_risk", "filename": "12_icon_dropout_risk_spike.svg", "name": "Dropout Risk Hazard", "category": "icons", "team": 1, "badge": "RISK / OBSTACLE", "desc": "16\u00d716 classic Pixboy platformer spikes + warning triangle \u2014 flags a household facing dropout risk.", "grid": [".......22.......", "......2112......", "......2112......", ".....221122.....", ".....221122.....", "....22211222....", "....22200222....", "...2222112222...", "...2222112222...", "..222222222222..", "..111111111111..", "................", "..1..11..11..1..", ".11111111111111.", "1111111111111111", "................"], "w": 16, "h": 16}, {"id": "icon_checkpoint", "filename": "13_icon_milestone_checkpoint.svg", "name": "Milestone Stepping Stone", "category": "icons", "team": 2, "badge": "PATH TILE + FLAG", "desc": "16\u00d716 retro platform brick block topped with a checkpoint flag for each grade milestone toward school.", "grid": [".....11222222...", ".....112111222..", ".....11211122...", ".....1122222....", ".....11.........", ".....11.........", ".....11.........", ".....11.........", "....1111........", "..111111111111..", ".12222222222221.", ".11111111111111.", ".13311133311131.", ".13311133311131.", ".11111111111111.", "................"], "w": 16, "h": 16}, {"id": "icon_grad_star", "filename": "14_icon_graduation_star.svg", "name": "School Completion Star", "category": "icons", "team": 3, "badge": "VICTORY EMBLEM", "desc": "16\u00d716 pixel star and graduation cap tassel for completing school at the final milestone.", "grid": [".......22.......", "......2112......", ".....221122.....", ".22222111122222.", "..221111111122..", "...2211111122...", "....21111112....", "...2211221122...", "..22112..21122..", "..2112....2112..", ".222........222.", "................", "..111111111111..", "....11111111....", "....11111111...2", "...............2"], "w": 16, "h": 16}];
+
+    // Retro Palettes inspired by Pixboy - Retro 2D Platformer
+    const PALETTES = {
+      ngo_teams: {
+        name: "4-NGO Retro Teams",
+        bg: "#141218",
+        fg: "#F4F1DE",
+        mid: "#524E66",
+        schoolAccent: "#FF5964",
+        teams: ["#FF5964", "#00F5D4", "#FFBE0B", "#FF70A6"]
+      },
+      pixboy_1bit: {
+        name: "Pixboy 1-Bit Coral",
+        bg: "#121016",
+        fg: "#F4F1DE",
+        mid: "#4D4859",
+        schoolAccent: "#FF5964",
+        teams: ["#FF5964", "#FF5964", "#FF5964", "#FF5964"]
+      },
+      gameboy_dmg: {
+        name: "DMG Pocket Green",
+        bg: "#0F380F",
+        fg: "#9BBC0F",
+        mid: "#306230",
+        schoolAccent: "#8BAC0F",
+        teams: ["#8BAC0F", "#8BAC0F", "#8BAC0F", "#8BAC0F"]
+      },
+      crt_amber: {
+        name: "Amber CRT Phosphor",
+        bg: "#180E04",
+        fg: "#FFD066",
+        mid: "#7A490A",
+        schoolAccent: "#FF8800",
+        teams: ["#FF9900", "#FFB833", "#FF7700", "#FFAA22"]
+      },
+      cga_arcade: {
+        name: "CGA Cyan/Magenta",
+        bg: "#0D0B18",
+        fg: "#FFFFFF",
+        mid: "#4A4466",
+        schoolAccent: "#FF2A85",
+        teams: ["#00F5D4", "#FF2A85", "#00F5D4", "#FF2A85"]
+      }
+    };
+
+    // Application State
+    const state = {
+      activeTab: "map",
+      activePalette: "ngo_teams",
+      mapLayout: "lanes", // 'lanes' or 'corners'
+      crtEnabled: true,
+      sfxEnabled: true,
+      categoryFilter: "all",
+      modalAssetId: null,
+      households: [
+        { id: 1, name: "NGO 1 (Alpha)", hh: "Household 1", step: 2, shield: true, risk: false },
+        { id: 2, name: "NGO 2 (Beta)",  hh: "Household 2", step: 3, shield: true, risk: false },
+        { id: 3, name: "NGO 3 (Gamma)", hh: "Household 3", step: 1, shield: false, risk: true },
+        { id: 4, name: "NGO 4 (Delta)", hh: "Household 4", step: 4, shield: true, risk: false }
+      ]
+    };
+
+    // Web Audio Retro Chiptune SFX
+    let audioCtx = null;
+    function playBeep(freq = 520, duration = 0.08, type = "square", slide = 0) {
+      if (!state.sfxEnabled) return;
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === "suspended") audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        if (slide !== 0) {
+          osc.frequency.linearRampToValueAtTime(freq + slide, audioCtx.currentTime + duration);
+        }
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function showToast(msg) {
+      const box = document.getElementById("toastBox");
+      box.textContent = msg;
+      box.classList.remove("hidden");
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => box.classList.add("hidden"), 2200);
+    }
+
+    function copyTextToClipboard(text, label = "SVG CODE COPIED!") {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => showToast(label)).catch(() => fallbackCopy(text, label));
+      } else {
+        fallbackCopy(text, label);
+      }
+    }
+
+    function fallbackCopy(text, label) {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); showToast(label); } catch (e) {}
+      document.body.removeChild(ta);
+    }
+
+    function downloadSvgFile(svgContent, filename) {
+      const blob = new Blob([svgContent], { type: "image/svg+xml;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("DOWNLOADED " + filename.toUpperCase());
+    }
+
+    // Run-length encode pixel grid into SVG <rect> strings
+    function gridToRects(grid, colors, offsetX = 0, offsetY = 0, scale = 1) {
+      const rects = [];
+      for (let y = 0; y < grid.length; y++) {
+        const row = grid[y];
+        let x = 0;
+        const n = row.length;
+        while (x < n) {
+          const ch = row[x];
+          if (ch === "." || ch === " ") {
+            x++;
+            continue;
+          }
+          let w = 1;
+          while (x + w < n && row[x + w] === ch) w++;
+          const fill = colors[ch] || colors["1"];
+          rects.push(`<rect x="${(offsetX + x) * scale}" y="${(offsetY + y) * scale}" width="${w * scale}" height="${scale}" fill="${fill}"/>`);
+          x += w;
+        }
+      }
+      return rects.join("\n  ");
+    }
+
+    function buildSingleSpriteSvg(sprite, pad = 2, scale = 10) {
+      const pal = PALETTES[state.activePalette];
+      const accent = sprite.team > 0 ? pal.teams[sprite.team - 1] : pal.schoolAccent;
+      const vw = (sprite.w + pad * 2) * scale;
+      const vh = (sprite.h + pad * 2) * scale;
+      const colors = { "0": pal.bg, "1": pal.fg, "2": accent, "3": pal.mid };
+      const rects = gridToRects(sprite.grid, colors, pad, pad, scale);
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${vw} ${vh}" width="${vw}" height="${vh}" shape-rendering="crispEdges">
+  <title>${sprite.name}</title>
+  <rect x="0" y="0" width="${vw}" height="${vh}" fill="${pal.bg}"/>
+  ${rects}
+</svg>`;
+    }
+
+    // Build Complete Live Map SVG (either 'lanes' or 'corners')
+    function buildLiveMapSvg(layoutMode = state.mapLayout) {
+      const pal = PALETTES[state.activePalette];
+      const vw = 1200, vh = 760;
+      const bg = pal.bg, fg = pal.fg, mid = pal.mid;
+      const houseGrids = [
+        SPRITES.find(s => s.id === "house_1").grid,
+        SPRITES.find(s => s.id === "house_2").grid,
+        SPRITES.find(s => s.id === "house_3").grid,
+        SPRITES.find(s => s.id === "house_4").grid
+      ];
+      const kidGrids = [
+        SPRITES.find(s => s.id === "kid_1").grid,
+        SPRITES.find(s => s.id === "kid_2").grid,
+        SPRITES.find(s => s.id === "kid_3").grid,
+        SPRITES.find(s => s.id === "kid_4").grid
+      ];
+      const schoolGrid = SPRITES.find(s => s.id === "school_central").grid;
+      const shieldGrid = SPRITES.find(s => s.id === "icon_intervention").grid;
+      const riskGrid = SPRITES.find(s => s.id === "icon_dropout_risk").grid;
+      const starGrid = SPRITES.find(s => s.id === "icon_grad_star").grid;
+
+      let out = [];
+      out.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${vw} ${vh}" width="100%" height="100%" shape-rendering="crispEdges">`);
+      out.push(`  <title>Pixboy Data Literacy Workshop Map (${layoutMode})</title>`);
+      out.push(`  <style>.rtxt { font-family: 'Press Start 2P', 'Courier New', monospace; font-weight: 700; }</style>`);
+      out.push(`  <rect x="0" y="0" width="${vw}" height="${vh}" fill="${bg}"/>`);
+
+      // Subtle Retro Starfield / Pixel Grid
+      for (let gx = 48; gx < vw - 40; gx += 48) {
+        for (let gy = 96; gy < vh - 40; gy += 48) {
+          out.push(`  <rect x="${gx}" y="${gy}" width="2" height="2" fill="${mid}" opacity="0.35"/>`);
+        }
+      }
+
+      // Outer Frame & Top HUD Bar
+      out.push(`  <rect x="14" y="14" width="${vw-28}" height="${vh-28}" fill="none" stroke="${fg}" stroke-width="4"/>`);
+      out.push(`  <rect x="24" y="24" width="${vw-48}" height="54" fill="${bg}" stroke="${fg}" stroke-width="3"/>`);
+      out.push(`  <text x="42" y="57" fill="${fg}" font-size="15" class="rtxt">PIXBOY WORKSHOP // KEEP KIDS IN SCHOOL</text>`);
+      const graduatedCount = state.households.filter(h => h.step === 5).length;
+      out.push(`  <text x="${vw-42}" y="57" fill="${pal.teams[2]}" font-size="13" text-anchor="end" class="rtxt">SCHOOL REACHED: ${graduatedCount}/4</text>`);
+
+      if (layoutMode === "lanes") {
+        // 4 Horizontal Platformer Tracks (Left Houses -> 5 Stepping Stones -> Right School)
+        const laneY = [126, 272, 418, 564];
+        const checkX = [255, 390, 525, 660, 795];
+        const stageNames = ["YR 1: ENROLL", "YR 2: ATTEND", "YR 3: EXAMS", "YR 4: SUPPORT", "YR 5: GRADUATE!"];
+
+        state.households.forEach((hh, i) => {
+          const ty = laneY[i];
+          const col = pal.teams[i];
+          const cMap = { "0": bg, "1": fg, "2": col, "3": mid };
+
+          // Team Header Tag
+          out.push(`  <rect x="40" y="${ty-26}" width="216" height="20" fill="${col}"/>`);
+          out.push(`  <text x="48" y="${ty-12}" fill="${bg}" font-size="10" class="rtxt">NGO ${hh.id} • HOUSEHOLD ${hh.id}</text>`);
+
+          // House Platform Ledge
+          out.push(`  <rect x="40" y="${ty+96}" width="144" height="16" fill="${fg}"/>`);
+          out.push(`  <rect x="44" y="${ty+100}" width="136" height="8" fill="${mid}"/>`);
+
+          // House Sprite (24x24 * 4 = 96x96)
+          out.push(gridToRects(houseGrids[i], cMap, 14, Math.floor(ty / 4), 4));
+
+          // Track Guide Rail
+          out.push(`  <rect x="184" y="${ty+100}" width="712" height="4" fill="${mid}" opacity="0.5"/>`);
+
+          // 5 Milestone Stepping Stones
+          checkX.forEach((cx, sIdx) => {
+            const stepNum = sIdx + 1;
+            const reached = stepNum <= hh.step;
+            const pFill = reached ? col : bg;
+            const pStroke = reached ? fg : mid;
+            out.push(`  <rect x="${cx-38}" y="${ty+92}" width="76" height="18" fill="${pStroke}"/>`);
+            out.push(`  <rect x="${cx-34}" y="${ty+96}" width="68" height="10" fill="${pFill}"/>`);
+            out.push(`  <text x="${cx}" y="${ty+125}" fill="${reached ? fg : mid}" font-size="8" text-anchor="middle" class="rtxt">${stageNames[sIdx]}</text>`);
+
+            // Mini Flag on passed checkpoints
+            if (reached && stepNum < hh.step) {
+              out.push(`  <rect x="${cx-2}" y="${ty+68}" width="4" height="24" fill="${fg}"/>`);
+              out.push(`  <rect x="${cx+2}" y="${ty+68}" width="14" height="10" fill="${col}"/>`);
+            }
+
+            // Active Kid Position
+            if (stepNum === hh.step) {
+              out.push(gridToRects(kidGrids[i], cMap, Math.floor((cx - 32) / 4), Math.floor((ty + 28) / 4), 4));
+              out.push(`  <rect x="${cx-26}" y="${ty+4}" width="52" height="16" fill="${col}"/>`);
+              out.push(`  <text x="${cx}" y="${ty+16}" fill="${bg}" font-size="9" text-anchor="middle" class="rtxt">KID ${hh.id}</text>`);
+
+              // Optional Intervention Shield Badge next to Kid
+              if (hh.shield) {
+                out.push(gridToRects(shieldGrid, { "0": bg, "1": fg, "2": pal.teams[1], "3": mid }, Math.floor((cx + 28) / 2), Math.floor((ty + 36) / 2), 2));
+              }
+              // Optional Dropout Risk Hazard next to Kid
+              if (hh.risk) {
+                out.push(gridToRects(riskGrid, { "0": bg, "1": fg, "2": pal.teams[0], "3": mid }, Math.floor((cx - 64) / 2), Math.floor((ty + 56) / 2), 2));
+              }
+              // Graduation Star if at Step 5!
+              if (hh.step === 5) {
+                out.push(gridToRects(starGrid, { "0": bg, "1": fg, "2": pal.teams[2], "3": mid }, Math.floor((cx + 28) / 2), Math.floor((ty + 4) / 2), 2));
+              }
+            }
+          });
+        });
+
+        // Right-Side Vertical Ladder & Grand Central School
+        out.push(`  <rect x="894" y="170" width="12" height="510" fill="${mid}"/>`);
+        for (let ry = 180; ry < 675; ry += 16) {
+          out.push(`  <rect x="890" y="${ry}" width="20" height="4" fill="${fg}"/>`);
+        }
+        out.push(`  <rect x="910" y="452" width="254" height="22" fill="${fg}"/>`);
+        out.push(`  <rect x="916" y="458" width="242" height="10" fill="${pal.schoolAccent}"/>`);
+        out.push(`  <rect x="932" y="210" width="210" height="24" fill="${fg}"/>`);
+        out.push(`  <text x="1037" y="227" fill="${bg}" font-size="11" text-anchor="middle" class="rtxt">CENTRAL SCHOOL</text>`);
+
+        const sMap = { "0": bg, "1": fg, "2": pal.schoolAccent, "3": mid };
+        out.push(gridToRects(schoolGrid, sMap, Math.floor(918 / 6), Math.floor(260 / 6), 6));
+
+        // Workshop Legend Panel under School
+        out.push(`  <rect x="916" y="496" width="242" height="188" fill="${bg}" stroke="${fg}" stroke-width="3"/>`);
+        out.push(`  <text x="1037" y="524" fill="${pal.teams[2]}" font-size="10" text-anchor="middle" class="rtxt">WORKSHOP LEGEND</text>`);
+        out.push(gridToRects(shieldGrid, { "0": bg, "1": fg, "2": pal.teams[1], "3": mid }, 464, 270, 2));
+        out.push(`  <text x="968" y="560" fill="${fg}" font-size="8.5" class="rtxt">NGO INTERVENTION</text>`);
+        out.push(gridToRects(riskGrid, { "0": bg, "1": fg, "2": pal.teams[0], "3": mid }, 464, 292, 2));
+        out.push(`  <text x="968" y="604" fill="${fg}" font-size="8.5" class="rtxt">DROPOUT RISK ALERT</text>`);
+        out.push(gridToRects(starGrid, { "0": bg, "1": fg, "2": pal.teams[2], "3": mid }, 464, 314, 2));
+        out.push(`  <text x="968" y="648" fill="${fg}" font-size="8.5" class="rtxt">COMPLETED SCHOOL</text>`);
+
+      } else {
+        // 4-Corner Village Convergence Layout
+        out.push(`  <rect x="450" y="486" width="300" height="22" fill="${fg}"/>`);
+        out.push(`  <rect x="456" y="492" width="288" height="10" fill="${pal.schoolAccent}"/>`);
+        out.push(`  <rect x="480" y="250" width="240" height="24" fill="${fg}"/>`);
+        out.push(`  <text x="600" y="267" fill="${bg}" font-size="11" text-anchor="middle" class="rtxt">★ CENTRAL SCHOOL ★</text>`);
+        const sMap = { "0": bg, "1": fg, "2": pal.schoolAccent, "3": mid };
+        out.push(gridToRects(schoolGrid, sMap, Math.floor(480 / 6), Math.floor(294 / 6), 6));
+
+        const cornerConfigs = [
+          { hx: 56, hy: 132, steps: [[200, 210], [270, 250], [340, 290], [410, 330], [465, 370]] },
+          { hx: 1048, hy: 132, steps: [[1000, 210], [930, 250], [860, 290], [790, 330], [735, 370]] },
+          { hx: 56, hy: 560, steps: [[200, 630], [270, 590], [340, 550], [410, 510], [465, 470]] },
+          { hx: 1048, hy: 560, steps: [[1000, 630], [930, 590], [860, 550], [790, 510], [735, 470]] }
+        ];
+
+        state.households.forEach((hh, i) => {
+          const cfg = cornerConfigs[i];
+          const col = pal.teams[i];
+          const cMap = { "0": bg, "1": fg, "2": col, "3": mid };
+
+          out.push(`  <rect x="${cfg.hx-16}" y="${cfg.hy-26}" width="160" height="20" fill="${col}"/>`);
+          out.push(`  <text x="${cfg.hx+64}" y="${cfg.hy-12}" fill="${bg}" font-size="8.5" text-anchor="middle" class="rtxt">NGO ${hh.id} • HH ${hh.id}</text>`);
+          out.push(`  <rect x="${cfg.hx-12}" y="${cfg.hy+96}" width="120" height="14" fill="${fg}"/>`);
+          out.push(gridToRects(houseGrids[i], cMap, Math.floor(cfg.hx / 4), Math.floor(cfg.hy / 4), 4));
+
+          cfg.steps.forEach((pt, sIdx) => {
+            const [sx, sy] = pt;
+            const stepNum = sIdx + 1;
+            const reached = stepNum <= hh.step;
+            out.push(`  <rect x="${sx-28}" y="${sy}" width="56" height="14" fill="${reached ? fg : mid}"/>`);
+            out.push(`  <rect x="${sx-24}" y="${sy+3}" width="48" height="8" fill="${reached ? col : bg}"/>`);
+            out.push(`  <text x="${sx}" y="${sy+26}" fill="${reached ? fg : mid}" font-size="8" text-anchor="middle" class="rtxt">YR${stepNum}</text>`);
+
+            if (stepNum === hh.step) {
+              out.push(gridToRects(kidGrids[i], cMap, Math.floor((sx - 32) / 4), Math.floor((sy - 64) / 4), 4));
+              out.push(`  <rect x="${sx-24}" y="${sy-82}" width="48" height="14" fill="${col}"/>`);
+              out.push(`  <text x="${sx}" y="${sy-72}" fill="${bg}" font-size="8" text-anchor="middle" class="rtxt">KID ${hh.id}</text>`);
+              if (hh.shield) {
+                out.push(gridToRects(shieldGrid, { "0": bg, "1": fg, "2": pal.teams[1], "3": mid }, Math.floor((sx + 24) / 2), Math.floor((sy - 56) / 2), 2));
+              }
+              if (hh.risk) {
+                out.push(gridToRects(riskGrid, { "0": bg, "1": fg, "2": pal.teams[0], "3": mid }, Math.floor((sx - 56) / 2), Math.floor((sy - 40) / 2), 2));
+              }
+            }
+          });
+        });
+      }
+
+      out.push(`</svg>`);
+      return out.join("\n");
+    }
+
+    // Render Live Map + NGO Controller Cards
+    function renderMapWorkspace() {
+      const container = document.getElementById("mapSvgContainer");
+      container.innerHTML = buildLiveMapSvg(state.mapLayout);
+
+      const pal = PALETTES[state.activePalette];
+      const cardsContainer = document.getElementById("ngoControlCards");
+      cardsContainer.innerHTML = "";
+
+      state.households.forEach((hh, idx) => {
+        const col = pal.teams[idx];
+        const card = document.createElement("div");
+        card.className = "bg-[#1A1722] pixel-border-sm p-3 space-y-2.5";
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="inline-block w-3.5 h-3.5 border border-[#F4F1DE]" style="background:${col}"></span>
+              <span class="font-pixel text-[11px] text-[#F4F1DE]">${hh.name}</span>
+            </div>
+            <span class="font-mono-code text-xs px-2 py-0.5 bg-[#282433] text-[#F4F1DE] border border-[#524E66]">
+              Milestone: <strong>${hh.step}/5</strong> ${hh.step === 5 ? "🎓" : ""}
+            </span>
+          </div>
+
+          <!-- Progress Bar -->
+          <div class="w-full bg-[#0E0C12] h-3 border border-[#524E66] flex">
+            ${[1,2,3,4,5].map(n => `<div class="flex-1 border-r border-[#1A1722]" style="background:${n <= hh.step ? col : 'transparent'}"></div>`).join("")}
+          </div>
+
+          <div class="flex flex-wrap items-center gap-1.5 pt-0.5">
+            <button data-action="prev" data-idx="${idx}" class="ngo-act-btn pixel-btn px-2.5 py-1 text-xs font-bold bg-[#282433] text-[#F4F1DE]" ${hh.step <= 1 ? "disabled opacity-40" : ""}>
+              -1 Step
+            </button>
+            <button data-action="next" data-idx="${idx}" class="ngo-act-btn flex-1 pixel-btn px-3 py-1 text-xs font-bold text-[#141218]" style="background:${col}" ${hh.step >= 5 ? "disabled opacity-40" : ""}>
+              +1 Right Decision (Advance Kid ${hh.id})
+            </button>
+            <button data-action="shield" data-idx="${idx}" class="ngo-act-btn pixel-btn px-2 py-1 text-xs font-mono-code ${hh.shield ? 'bg-[#00F5D4] text-[#141218] font-bold' : 'bg-[#282433] text-[#A6A2B8]'}" title="Toggle NGO Intervention Shield">
+              🛡 Shield
+            </button>
+            <button data-action="risk" data-idx="${idx}" class="ngo-act-btn pixel-btn px-2 py-1 text-xs font-mono-code ${hh.risk ? 'bg-[#FF5964] text-[#141218] font-bold' : 'bg-[#282433] text-[#A6A2B8]'}" title="Toggle Dropout Risk Alert">
+              ⚠ Risk
+            </button>
+          </div>
+        `;
+        cardsContainer.appendChild(card);
+      });
+
+      // Attach listeners to NGO control buttons
+      cardsContainer.querySelectorAll(".ngo-act-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const idx = parseInt(btn.getAttribute("data-idx"), 10);
+          const act = btn.getAttribute("data-action");
+          const hh = state.households[idx];
+          if (act === "next" && hh.step < 5) {
+            hh.step++;
+            hh.risk = false;
+            playBeep(440 + hh.step * 80, 0.12, "square", 180);
+          } else if (act === "prev" && hh.step > 1) {
+            hh.step--;
+            playBeep(360, 0.09, "sawtooth", -100);
+          } else if (act === "shield") {
+            hh.shield = !hh.shield;
+            playBeep(620, 0.08, "triangle", 120);
+          } else if (act === "risk") {
+            hh.risk = !hh.risk;
+            playBeep(220, 0.14, "sawtooth", -60);
+          }
+          renderMapWorkspace();
+        });
+      });
+    }
+
+    // Render Standalone SVG Sprite Gallery
+    function renderSpriteGallery() {
+      const gridEl = document.getElementById("spriteGridContainer");
+      gridEl.innerHTML = "";
+
+      // Include the 2 Complete Maps as cards as well
+      const mapCards = [
+        {
+          id: "map_lanes",
+          filename: "00_pixboy_map_4_lanes_to_school.svg",
+          name: "Complete Map: 4 Platformer Lanes",
+          category: "maps",
+          badge: "FULL SCENE SVG (1200×760)",
+          desc: "Complete 2D side-scrolling platformer map with 4 stacked Houses, 5 milestone stepping stones per lane, 4 Kids, and Central School.",
+          isMap: true,
+          layout: "lanes"
+        },
+        {
+          id: "map_corners",
+          filename: "00_pixboy_map_4_corners_village.svg",
+          name: "Complete Map: 4-Corner Village",
+          category: "maps",
+          badge: "FULL SCENE SVG (1200×760)",
+          desc: "Radial convergence village map with the 4 Households in the 4 corners, diagonal stepping-stone paths, and the School in the center.",
+          isMap: true,
+          layout: "corners"
+        }
+      ];
+
+      const allItems = [...mapCards, ...SPRITES];
+      const filtered = state.categoryFilter === "all"
+        ? allItems
+        : allItems.filter(item => item.category === state.categoryFilter);
+
+      filtered.forEach(item => {
+        const svgMarkup = item.isMap
+          ? buildLiveMapSvg(item.layout)
+          : buildSingleSpriteSvg(item, 2, 10);
+
+        const card = document.createElement("div");
+        card.className = "bg-[#1A1722] pixel-border p-4 flex flex-col justify-between space-y-3";
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <span class="font-mono-code text-[11px] px-2 py-0.5 bg-[#282433] text-[#00F5D4] border border-[#524E66]">${item.badge}</span>
+              <span class="font-mono-code text-[11px] text-[#A6A2B8]">${item.isMap ? '1200×760' : item.w + '×' + item.h + ' px'}</span>
+            </div>
+            <h3 class="font-pixel text-xs text-[#F4F1DE] mb-1">${item.name}</h3>
+            <p class="text-xs text-[#BDB9CC] mb-3">${item.desc}</p>
+            <div class="bg-[#141218] pixel-border-sm p-3 flex items-center justify-center h-44 overflow-hidden">
+              <div class="${item.isMap ? 'w-full h-full flex items-center justify-center' : 'w-32 h-32 flex items-center justify-center'}">
+                ${svgMarkup}
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 pt-2">
+            <button data-dl="${item.id}" class="btn-card-dl flex-1 pixel-btn py-2 text-xs font-bold bg-[#00F5D4] text-[#141218]">
+              ⬇ .SVG
+            </button>
+            <button data-cp="${item.id}" class="btn-card-cp flex-1 pixel-btn py-2 text-xs font-bold bg-[#FFBE0B] text-[#141218]">
+              📋 Copy SVG
+            </button>
+            <button data-insp="${item.id}" class="btn-card-insp pixel-btn px-3 py-2 text-xs font-bold bg-[#282433] text-[#F4F1DE]" title="Inspect Raw SVG Code">
+              &lt;/&gt;
+            </button>
+          </div>
+        `;
+        gridEl.appendChild(card);
+      });
+
+      // Attach listeners for Download / Copy / Inspect
+      gridEl.querySelectorAll(".btn-card-dl").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = btn.getAttribute("data-dl");
+          const item = allItems.find(x => x.id === id);
+          const svg = item.isMap ? buildLiveMapSvg(item.layout) : buildSingleSpriteSvg(item, 2, 10);
+          playBeep(600, 0.08, "square", 120);
+          downloadSvgFile(svg, item.filename);
+        });
+      });
+
+      gridEl.querySelectorAll(".btn-card-cp").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = btn.getAttribute("data-cp");
+          const item = allItems.find(x => x.id === id);
+          const svg = item.isMap ? buildLiveMapSvg(item.layout) : buildSingleSpriteSvg(item, 2, 10);
+          playBeep(720, 0.07, "square", 80);
+          copyTextToClipboard(svg, "COPIED " + item.name.toUpperCase() + " SVG!");
+        });
+      });
+
+      gridEl.querySelectorAll(".btn-card-insp").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = btn.getAttribute("data-insp");
+          openInspectorModal(id, allItems);
+        });
+      });
+    }
+
+    function openInspectorModal(id, allItems) {
+      const item = allItems.find(x => x.id === id);
+      if (!item) return;
+      state.modalAssetId = id;
+      const svg = item.isMap ? buildLiveMapSvg(item.layout) : buildSingleSpriteSvg(item, 2, 10);
+      document.getElementById("modalTitle").textContent = item.name.toUpperCase();
+      document.getElementById("modalSubtitle").textContent = item.filename + " • Crisp Pixel-Art Vector SVG";
+      document.getElementById("modalPreviewBox").innerHTML = `<div class="w-44 h-44 flex items-center justify-center">${svg}</div>`;
+      document.getElementById("modalSvgCode").value = svg;
+      const modal = document.getElementById("svgModal");
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+      playBeep(500, 0.06, "triangle", 100);
+    }
+
+    // Wire up Top-Level Controls on load
+    window.addEventListener("DOMContentLoaded", () => {
+      const tabBtnMap = document.getElementById("tabBtnMap");
+      const tabBtnSprites = document.getElementById("tabBtnSprites");
+      const viewMap = document.getElementById("viewMap");
+      const viewSprites = document.getElementById("viewSprites");
+
+      tabBtnMap.addEventListener("click", () => {
+        state.activeTab = "map";
+        viewMap.classList.remove("hidden");
+        viewSprites.classList.add("hidden");
+        tabBtnMap.className = "pixel-btn px-3 py-2 text-xs font-pixel bg-[#FF5964] text-[#141218]";
+        tabBtnSprites.className = "pixel-btn px-3 py-2 text-xs font-pixel bg-[#282433] text-[#F4F1DE]";
+        playBeep(540, 0.07, "square");
+        renderMapWorkspace();
+      });
+
+      tabBtnSprites.addEventListener("click", () => {
+        state.activeTab = "sprites";
+        viewSprites.classList.remove("hidden");
+        viewMap.classList.add("hidden");
+        tabBtnSprites.className = "pixel-btn px-3 py-2 text-xs font-pixel bg-[#FF5964] text-[#141218]";
+        tabBtnMap.className = "pixel-btn px-3 py-2 text-xs font-pixel bg-[#282433] text-[#F4F1DE]";
+        playBeep(640, 0.07, "square");
+        renderSpriteGallery();
+      });
+
+      // CRT Scanline toggle
+      const btnToggleCrt = document.getElementById("btnToggleCrt");
+      btnToggleCrt.addEventListener("click", () => {
+        state.crtEnabled = !state.crtEnabled;
+        document.getElementById("crtOverlayMap").style.display = state.crtEnabled ? "block" : "none";
+        btnToggleCrt.textContent = state.crtEnabled ? "CRT: ON" : "CRT: OFF";
+        playBeep(400, 0.06, "triangle");
+      });
+
+      // SFX toggle
+      const btnToggleSfx = document.getElementById("btnToggleSfx");
+      btnToggleSfx.addEventListener("click", () => {
+        state.sfxEnabled = !state.sfxEnabled;
+        btnToggleSfx.textContent = state.sfxEnabled ? "SFX: ON" : "SFX: OFF";
+        if (state.sfxEnabled) playBeep(660, 0.08, "square");
+      });
+
+      // Palette switcher buttons
+      document.querySelectorAll(".palette-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          state.activePalette = btn.getAttribute("data-palette");
+          document.querySelectorAll(".palette-btn").forEach(b => {
+            b.classList.remove("bg-[#F4F1DE]", "text-[#141218]");
+            b.classList.add("bg-[#221F2B]");
+          });
+          btn.classList.remove("bg-[#221F2B]");
+          btn.classList.add("bg-[#F4F1DE]", "text-[#141218]");
+          playBeep(580, 0.08, "square", 140);
+          renderMapWorkspace();
+          if (state.activeTab === "sprites") renderSpriteGallery();
+        });
+      });
+
+      // Map Layout switcher
+      const btnLayoutLanes = document.getElementById("btnLayoutLanes");
+      const btnLayoutCorners = document.getElementById("btnLayoutCorners");
+      btnLayoutLanes.addEventListener("click", () => {
+        state.mapLayout = "lanes";
+        btnLayoutLanes.className = "pixel-btn px-3 py-1.5 text-xs font-bold bg-[#FFBE0B] text-[#141218]";
+        btnLayoutCorners.className = "pixel-btn px-3 py-1.5 text-xs font-bold bg-[#282433] text-[#F4F1DE]";
+        playBeep(520, 0.08, "square");
+        renderMapWorkspace();
+      });
+      btnLayoutCorners.addEventListener("click", () => {
+        state.mapLayout = "corners";
+        btnLayoutCorners.className = "pixel-btn px-3 py-1.5 text-xs font-bold bg-[#FFBE0B] text-[#141218]";
+        btnLayoutLanes.className = "pixel-btn px-3 py-1.5 text-xs font-bold bg-[#282433] text-[#F4F1DE]";
+        playBeep(520, 0.08, "square");
+        renderMapWorkspace();
+      });
+
+      // Advance All & Reset Board
+      document.getElementById("btnAdvanceAll").addEventListener("click", () => {
+        state.households.forEach(h => { if (h.step < 5) h.step++; h.risk = false; });
+        playBeep(660, 0.14, "square", 220);
+        renderMapWorkspace();
+      });
+      document.getElementById("btnResetBoard").addEventListener("click", () => {
+        state.households.forEach(h => { h.step = 1; h.shield = false; h.risk = false; });
+        playBeep(300, 0.12, "sawtooth", -80);
+        renderMapWorkspace();
+      });
+
+      // Download / Copy Current Map SVG
+      document.getElementById("btnDownloadCurrentMapSvg").addEventListener("click", () => {
+        const svg = buildLiveMapSvg(state.mapLayout);
+        const fname = state.mapLayout === "lanes" ? "pixboy_map_4_lanes_to_school.svg" : "pixboy_map_4_corners_village.svg";
+        playBeep(680, 0.09, "square", 120);
+        downloadSvgFile(svg, fname);
+      });
+      document.getElementById("btnCopyCurrentMapSvg").addEventListener("click", () => {
+        const svg = buildLiveMapSvg(state.mapLayout);
+        playBeep(740, 0.08, "square", 100);
+        copyTextToClipboard(svg, "FULL MAP SVG COPIED!");
+      });
+
+      // Category Filter buttons in Sprite View
+      document.querySelectorAll(".cat-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          state.categoryFilter = btn.getAttribute("data-cat");
+          document.querySelectorAll(".cat-btn").forEach(b => {
+            b.className = "cat-btn pixel-btn px-3 py-1.5 text-xs font-bold bg-[#282433] text-[#F4F1DE]";
+          });
+          btn.className = "cat-btn pixel-btn px-3 py-1.5 text-xs font-bold bg-[#FF5964] text-[#141218]";
+          playBeep(500, 0.06, "square");
+          renderSpriteGallery();
+        });
+      });
+
+      // Modal close / copy / download
+      document.getElementById("btnCloseModal").addEventListener("click", () => {
+        const modal = document.getElementById("svgModal");
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+      });
+      document.getElementById("btnModalCopy").addEventListener("click", () => {
+        const code = document.getElementById("modalSvgCode").value;
+        copyTextToClipboard(code, "SVG MARKUP COPIED!");
+      });
+      document.getElementById("btnModalDownload").addEventListener("click", () => {
+        const code = document.getElementById("modalSvgCode").value;
+        const fname = (state.modalAssetId || "asset") + ".svg";
+        downloadSvgFile(code, fname);
+      });
+
+      // Initial render
+      renderMapWorkspace();
+      renderSpriteGallery();
+    });
+  </script>
+</body>
+</html>

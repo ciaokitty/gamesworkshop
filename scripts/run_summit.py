@@ -96,7 +96,7 @@ def main():
             time.sleep(.2)
         if child.poll() is not None:
             return child.returncode
-        print('\nSUMMIT - Sentences / Rover / Households', flush=True)
+        print('\nSUMMIT - Sentences / Rover / Households / Extended Households', flush=True)
         for label, address in addresses():
             print(f'{label}\n  Host:     http://{address}:{args.port}/\n  Audience: http://{address}:{args.port}/audience', flush=True)
         print('\nCtrl+C stops Summit. Restarting resets the live room.\n', flush=True)

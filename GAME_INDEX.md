@@ -3,7 +3,7 @@
 ## Summit
 
 Run `./run-summit.sh` and open the [landing page](http://localhost:8688/).
-One server provides all three games, the icon overview and audience phones.
+One server provides all four games, the icon overview and audience phones.
 
 ### Sentences
 
@@ -65,6 +65,32 @@ predictions about real households.
 [Household model](households/MODEL.md) -
 [Shared stage design](narrative/shared_scenarios_stages.md)
 
+### Extended Households
+
+A retro follow-up to Households; its screen title is **PAPERWEIGHTS**. Open
+`/extended-households/`.
+
+- **Part 1 - Field reports:**
+  - one LED dot-matrix chart, where each team's line charts its decisions on a shared score
+    axis: a step up for a right call, a red step down for a missed slip or a needless
+    intervention (score +1 / −1);
+  - team icons A, B and C (Food, Money, School; Villages 1-3) open Rover-style card modals with
+    reveals, **ASK AI**, **ASK AUDIENCE**, **SKIP** and **INTERVENE**;
+  - each team plays four months;
+  - the AI learned from calmer state-wide records, so it can be confidently wrong;
+  - phones suggest which card to flip, from pictures of their own village's history. The room
+    splits into Teams A-C for this game only;
+  - when all teams finish, the room writes its paper cheatsheet and moves on to Part 2.
+- **Part 2 - One home:** played like Households, on one big village lane with Households' team
+  dialog. The three organisations share one family, with 3 interventions (each holds all three
+  ladders) and 3 card flips; **AUDIENCE** asks the whole room's phones which card to flip, any
+  number of times. Click the map or press `Space` to open the dialog.
+
+The game never shows the true rules; they are only in the facilitator guide. To test with a full room, set 200 bots on the landing page.
+
+[Facilitator guide](narrative/EXTENDED_HOUSEHOLDS.md) -
+[Game README](extended-households/README.md)
+
 ### Other competitive stages
 
 Both scenarios have the same stage selector and visual design:
@@ -81,8 +107,8 @@ Judgement removes those hints and uses uncertain dropout outcomes. Household
 Judgement has two interventions; an unnecessary intervention spends support
 rather than eliminating the team.
 
-Live phone polls currently support Sentences, Rover Risks and Households
-Indicators. Other stages retain the prototype's simulated or spoken interaction.
+Live phone polls currently support Sentences, Rover Risks, Households
+Indicators and both parts of Extended Households. Other stages retain the prototype's simulated or spoken interaction.
 
 ### Phones, sheets and facilitation
 

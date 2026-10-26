@@ -21,6 +21,9 @@ def build(output=None):
     shutil.copytree(COMPETITIVE, dest, dirs_exist_ok=True)
     shutil.copytree(ROOT / 'households', target / 'households', dirs_exist_ok=True,
                     ignore=shutil.ignore_patterns('out', '__pycache__'))
+    # Extended Households imports Households' sprites, cards and font from ../households/.
+    shutil.copytree(ROOT / 'extended-households', target / 'extended-households', dirs_exist_ok=True,
+                    ignore=shutil.ignore_patterns('__pycache__'))
     # Reproduce actual sentence-sheet deals from the reviewed corpus. No PDFs.
     spec = importlib.util.spec_from_file_location('robot_majority', ROOT / 'paperweights/robot-majority/mixed.py')
     sentence_model = importlib.util.module_from_spec(spec)

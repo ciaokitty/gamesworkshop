@@ -1,7 +1,7 @@
 # Households - risks, indicators and judgement
 
-This is the facilitator's guide to the current Household game. Four stage reps,
-each supported by one audience team, try to get a household through six months.
+This is the facilitator's guide to the current Household game. Three stage reps,
+each supported by one audience team (A, B or C), try to get a household through six months.
 They share the screen but make decisions independently. The objective is to
 experience how evidence changes a decision, what remains uncertain, and who bears
 the cost of acting on incomplete information.
@@ -26,9 +26,11 @@ support this month. Intervene means provide support. A card flip only obtains
 information: it does not provide support, advance the month or prevent dropout.
 The rep must still choose an action.
 
-The familiar Rover contour map is a visual placeholder. Routes diverge according
-to Skip/Intervene decisions, while every team still has six months to complete.
-The contour heights are not household risk measurements. On elimination the
+The map is a village: homes A and B at the top left, home C on the right and the
+school in the middle. Each child's road has six numbered monthly stops beside that
+month's field; Intervene detours to a support camp, Skip walks straight on, and after
+month six the roads merge into the main road to the school. The scenery is the same
+for every household and is not a risk measurement. On elimination the
 team shows OUT and its marker turns red; surviving all six months shows FINISHED.
 
 ## Colors mean context
@@ -66,7 +68,7 @@ might still be hidden. In Judgement, context also contributes to uncertain risk.
 All four cards are face up. **Only Attendance/Dropout has the filled hazard
 background** - white on the dark theme. Failed harvest, loan and storm are not
 individually displayed as death cards. There are no dotted indicator borders.
-The map highlights the next column, ahead of the marker.
+The map highlights the next stop, ahead of the marker.
 
 The audience gives spoken advice and the rep chooses:
 
@@ -85,7 +87,7 @@ open a live phone poll; discussion happens in the room.
 ## Stage 2 - Indicators: ask for useful evidence
 
 Each month begins with one free revealed card; the other three are face down.
-The map highlights the current column. **Dropout is never displayed in this
+The map highlights the current stop. **Dropout is never displayed in this
 stage, even after a loss.** Instead, failed harvest and loan have dotted borders.
 
 The deliberately simple teaching rule is:

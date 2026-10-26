@@ -20,11 +20,11 @@ Pages served by the plain 8684 server find no `/api/room` and keep their simulat
 | --- | --- | --- | --- |
 | Sentences, Majority word | everyone | Tap the word that matches, if any | bars; click one to accept, or Accept = top |
 | Rover Competitive, Risks | the rep's team | Team X: GO or AVOID? (no cards; the data side shows the Households dropout to avoid) | GO / AVOID percentages under the team |
-| Households Competitive, Indicators | the rep's team | Tap the row that matches (latest card) | FLIP percentages under the AI estimate |
+| Households Competitive, Indicators | the team's Households group (A, B or C) | Tap the row that matches (latest card) | FLIP percentages under the AI estimate |
 | Extended Households, Part 1 | the team's Extended group (A, B or C) | Which card to flip? Tap the row that matches (latest card) | FLIP percentages in the team's modal |
 | Extended Households, Part 2 | everyone (vote key `EH`, kind `home`) | One home: which card to flip? Tap the row that matches (latest card) | FLIP percentages in the family's dialog |
 
-Teams: sheet k is team `ABCD[(k-1) % 4]`. Extended Households regroups the same seats into `ABC[(k-1) % 3]` (vote keys `EA`/`EB`/`EC`) for its votes only. A rep's Go/Avoid, a card flip or Reset closes that vote. Navigating to another activity (including landing, collaborative and Icons) closes old votes without clearing the roster.
+Teams: sheet k is team `ABCD[(k-1) % 4]` for Rover. Households regroups the same seats into `ABC[(k-1) % 3]` (vote keys `HA`/`HB`/`HC`), and so does Extended Households (vote keys `EA`/`EB`/`EC`), for their votes only. A rep's Go/Avoid, a card flip or Reset closes that vote. Navigating to another activity (including landing, collaborative and Icons) closes old votes without clearing the roster.
 
 Empty polls distinguish **Waiting for votes** from **No matching card suggestion**. The latter means nobody in that team has a usable matching row, after excluding already revealed categories; it is not a recommendation to Skip.
 
@@ -66,6 +66,6 @@ Word sheets can still change when room size crosses a bucket boundary. This fix 
 
 ## Phone and vote controls
 
-Opening `/audience` registers a browser with a localStorage ID. Refreshing retains its seat; another browser or private session counts separately. Seats cycle through teams A, B, C, D. Idle phones are pruned after 30 minutes when another phone joins. Configured bots are additive, not a fixed-room-size top-up. Sentence reserve bots additionally complete the selected word pack.
+Opening `/audience` registers a browser with a localStorage ID. Refreshing retains its seat; another browser or private session counts separately. Seats cycle through teams A, B, C, D (A, B, C for both Households games). Idle phones are pruned after 30 minutes when another phone joins. Configured bots are additive, not a fixed-room-size top-up. Sentence reserve bots additionally complete the selected word pack.
 
 The host can type a starting word, choose a word/color autocomplete suggestion, or enter a full cue such as `PURPLE:robot`. Ambiguous words require the color. Live bars show percentages of submitted candidate votes. The phone’s **No matching word** button appears during word polls and records an abstention, excluded from those percentages; tapping a valid row replaces it.

@@ -49,8 +49,8 @@ safe square. Collaborative has its own lives, scoring and difficulty rules.
 [Full Household game and facilitator guide](narrative/HOUSEHOLDS_GAME.md) -
 colors, dropout, the three stages, reveals, AI and lightning budgets.
 
-The landing page opens **competitive Indicators**. Four teams share the Rover
-map as a visual placeholder. The cards are harvest, cash, attendance and weather.
+The landing page opens **competitive Indicators**. Three teams walk their
+children to school on one village map. The cards are harvest, cash, attendance and weather.
 Use the landing page's **Icons** link to introduce them.
 
 1. Ask AI for Skip/Intervene estimates from the revealed evidence.

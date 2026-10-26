@@ -1,49 +1,40 @@
-// Households shared map: four homes, six monthly fields and the school. It replaces the
-// Jezero contours for this scenario only and reads window.paperweights.state(); the team
-// panels and the game rules stay in competitive.js. The scenery is the same for every
+// Households shared map: a top-down village. Homes A and B stand at the top left and C on the
+// right; each child's road runs through six monthly stops, with that month's field beside it,
+// then joins the main road up to the school in the middle. It reads window.paperweights.state();
+// the team panels and the game rules stay in competitive.js. The scenery is the same for every
 // household and never reveals cards or outcomes.
 import { PAL, TEAMS, SPR, FIELDS, ANIMALS, ZZZ, PUPS, FLOWERS } from './village-sprites.js';
 import { SFX, addSoundButton, walking } from './sound.js';
 import * as modal from './team-modal.js';
 
-// The world is 272 pixels tall; its width follows the screen, and the extra width goes
-// into the six month columns. Houses, school and children keep their pixel size.
-const H = 272, X0 = 38, RIGHT = 92, MIN_W = 400, MONTHS = 6;
-let W = 0, CW = 59, VROAD = 396, SCHOOL = { x: 402, y: 144 }, DOOR = { x: 444, y: 194 };
-const YARD = 200;
-const A = m => Math.round(X0 + m * CW);
-const laneTop = k => 28 + 60 * k, roadY = k => laneTop(k) + 40;
-const SCENERY = [ // small props as fractions of a month column, clear of the boundaries and camp spots
-  ['bush', 0, 2, 0.24, 0], ['handpump', 0, 4, 0.8, 0], ['bush', 0, 5, 0.22, 0],
-  ['bush', 0, 1, 0.78, 1], ['well', 0, 3, 0.8, 1], ['bush', 0, 4, 0.24, 1],
-  ['bush', 0, 0, 0.78, 2], ['bush', 0, 3, 0.22, 2], ['handpump', 0, 5, 0.8, 2],
-  ['well', 0, 1, 0.8, 3], ['bush', 0, 2, 0.78, 3], ['bush', 0, 4, 0.22, 3],
-  ['bush', 0, 5, 0.8, 0], ['bush', 0, 2, 0.6, 0],
-  ['bush', 0, 5, 0.22, 1], ['bush', 0, 1, 0.22, 1],
-  ['bush', 0, 1, 0.8, 2], ['bush', 0, 4, 0.78, 2],
-  ['bush', 0, 1, 0.22, 3], ['bush', 0, 5, 0.78, 3],
+// The world is 272 pixels tall; its width follows the screen, and the extra width goes into the
+// east-west roads. Houses, school and children keep their pixel size.
+const H = 272, MIN_W = 480, MONTHS = 6, BUMP = 20;
+const HOUSE_FOOT = 46, DOOR_X = [22, 18, 18]; // houses stand on one line; door centre within each sprite
+const ROAD_Y = [220, 146, 182];                // A's road runs lowest, B's joins nearest the school, C's comes in from the right
+const BEDS = [244, 252, 260];                  // flower beds in the garden, bottom left
+let W = 0, MID = 240, SCHOOL = { x: 0, y: 62 }, DOOR = { x: 0, y: 0 }, HOUSES = [], STOPS = [], NORMALS = [];
+const anchor = (a, dx) => (a === 'L' ? 0 : a === 'M' ? MID : W) + dx;
+const PROPS = [ // [sprite, variant, anchor (Left, Middle, Right), centre offset, foot]: clear of roads, fields and camp spots
+  ['tree', 0, 'L', 140, 34], ['tree', 1, 'L', 163, 30], ['tree', 0, 'L', 186, 35], ['handpump', 0, 'L', 168, 88],
+  ['tree', 1, 'M', -46, 58], ['tree', 0, 'M', 46, 60], ['bush', 0, 'M', -64, 60], ['bush', 0, 'M', 66, 62],
+  ['tree', 1, 'R', -110, 34], ['tree', 0, 'R', -84, 40], ['bush', 0, 'R', -62, 24], ['sapling', 0, 'M', 130, 72], ['well', 0, 'M', 104, 102],
+  ['tree', 0, 'M', 150, 112], ['tree', 1, 'M', 128, 128], ['bush', 0, 'M', 166, 128],
+  ['sapling', 1, 'L', 22, 266], ['bush', 0, 'L', 10, 248],
+  ['tree', 1, 'R', -20, 246], ['well', 0, 'R', -42, 266], ['bush', 0, 'M', 48, 266],
 ];
-const BLOOMS = [ // [variant, month, fraction, lane]: small flower clumps beside the roads
-  [0, 0, 0.27, 0], [1, 3, 0.73, 0], [2, 1, 0.86, 0], [1, 5, 0.6, 0],
-  [2, 0, 0.73, 1], [0, 3, 0.27, 1], [1, 4, 0.62, 1], [0, 1, 0.14, 1],
-  [1, 2, 0.73, 2], [2, 4, 0.27, 2], [0, 5, 0.6, 2], [1, 0, 0.14, 2],
-  [0, 0, 0.27, 3], [2, 3, 0.73, 3], [1, 4, 0.62, 3], [0, 5, 0.14, 3],
+// Animals stay in the yards, garden and paddock, clear of the roads and camps. Fixed spots, so they hint at nothing.
+const PETS = [ // [kind, anchor, centre offset, foot]
+  ['dogSit', 'L', 196, 92], ['cat', 'M', 66, 96],
+  ['rooster', 'M', -28, 262], ['hen', 'M', -10, 266], ['chick', 'M', 2, 266], ['chick', 'M', 8, 266],
+  ['cow', 'M', 72, 236], ['cowBrown', 'R', -72, 258], ['dogSleep', 'R', -100, 228],
 ];
-// Animals sit in the grass just above a road, mid-column: under any support camp and below
-// the detour, clear of the boundaries where children wait. Fixed spots, so they hint at nothing.
-const PETS = [ // [kind, lane, month, fraction of the column]
-  ['dogSit', 0, 1, 0.45], ['hen', 0, 4, 0.42], ['chick', 0, 4, 0.57], ['chick', 0, 4, 0.63],
-  ['cat', 1, 2, 0.38], ['cow', 1, 5, 0.5],
-  ['rooster', 2, 1, 0.5], ['dogSleep', 2, 3, 0.5],
-  ['cowBrown', 3, 2, 0.5], ['hen', 3, 5, 0.45], ['chick', 3, 5, 0.6],
-];
-const YARD_PROPS = [['tree', 1, 16, 92], ['tree', 0, 60, 76], ['tree', 0, 38, 56], ['bush', 0, 76, 92], ['handpump', 0, 74, 128], ['bush', 0, 44, 118], ['sapling', 0, 24, 128], ['tree', 0, 10, 238], ['tree', 1, 48, 252], ['sapling', 1, 28, 266], ['bush', 0, 74, 226], ['bush', 0, 62, 236], ['well', 0, 68, 262]]; // x from the school's left edge
 const SPEED = 44, reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const canvas = document.querySelector('#shared-canvas'), ctx = canvas.getContext('2d');
-canvas.setAttribute('aria-label', 'Village map: four homes on the left, six months of fields, the school on the right. Tap a lane or press A to D to open a team.');
+canvas.setAttribute('aria-label', 'Village map: homes A and B at the top left, home C on the right, the school in the middle. Each road has six monthly stops. Tap a road or press A to C to open a team.');
 canvas.tabIndex = 0;
-const footer = Object.assign(document.createElement('div'), { className: 'map-footer', innerHTML: '<span class="home">HOME</span><span class="school">SCHOOL</span>' });
+const footer = Object.assign(document.createElement('div'), { className: 'map-footer', innerHTML: '<span class="home">HOME</span><span class="school">SCHOOL</span><span class="home home-right">HOME</span>' });
 document.querySelector('.shared-map').after(footer);
 canvas.style.filter = 'none'; // the light theme inverts canvases; keep the village in true colour
 canvas.style.display = 'block';
@@ -92,54 +83,96 @@ function drawLabels(s) {
   }
 }
 function hash(s) { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+const dist = (a, b) => Math.hypot(b.x - a.x, b.y - a.y);
 
-// ---------- static background: sky, grass, fields, roads ----------
-function road(b, x, y, w, h) {
-  const across = w > h;
-  b.fillStyle = '#7a5a3a'; b.fillRect(x, y, w, h);
-  b.fillStyle = '#b48d62'; b.fillRect(x + (across ? 0 : 1), y + (across ? 1 : 0), across ? w : w - 2, across ? h - 2 : h);
-  b.fillStyle = '#c9a274';
-  for (let i = 0; i < Math.max(w, h); i += 7) across ? b.fillRect(x + i, y + 1 + (i % 2), 2, 1) : b.fillRect(x + 1 + (i % 2), y + i, 1, 2);
-}
+// ---------- layout: houses, six stops per road, the school ----------
 function layout(width) {
   W = width;
-  CW = (W - X0 - RIGHT) / MONTHS;
-  VROAD = W - RIGHT;
-  SCHOOL = { x: W - 86, y: 144 };
-  DOOR = { x: W - 44, y: 194 };
+  MID = Math.round(W / 2);
+  SCHOOL = { x: MID - 31, y: 62 };
+  DOOR = { x: MID, y: SCHOOL.y + 43 };
+  HOUSES = [6, 80, W - 44].map((x, k) => ({ x, y: HOUSE_FOOT - SPR.house[k].length }));
+  STOPS = HOUSES.map((h, k) => {
+    const door = { x: h.x + DOOR_X[k], y: HOUSE_FOOT + 8 };
+    return split(door, { x: door.x, y: ROAD_Y[k] }, { x: MID + (k === 2 ? 12 : -12), y: ROAD_Y[k] });
+  });
+  // Detours bulge to one side of the road and the fields sit on the other: right then up for
+  // A and B, left then up for C.
+  NORMALS = STOPS.map((s, k) => s.slice(1).map((b, m) => {
+    const a = s[m], l = dist(a, b), dx = (b.x - a.x) / l, dy = (b.y - a.y) / l;
+    return k === 2 ? { x: -dy, y: dx } : { x: dy, y: -dx };
+  }));
   bgC.width = fgC.width = W;
   bgC.height = fgC.height = H;
   paintBackground();
   views = []; // redraw every walk at the new size
 }
+function split(a, bend, b) { // six stretches with the bend on a stop, so no detour turns a corner
+  const l1 = dist(a, bend), l2 = dist(bend, b), spread = n => { const p = l1 / n, q = l2 / (MONTHS - n); return Math.max(p, q) / Math.min(p, q); };
+  let n = 1;
+  for (let i = 2; i < MONTHS; i++) if (spread(i) < spread(n)) n = i;
+  const at = (p, q, t) => ({ x: Math.round(p.x + (q.x - p.x) * t), y: Math.round(p.y + (q.y - p.y) * t) });
+  return [...Array.from({ length: n }, (_, i) => at(a, bend, i / n)), ...Array.from({ length: MONTHS - n }, (_, i) => at(bend, b, i / (MONTHS - n))), b];
+}
+const bump = (k, m) => Math.min(BUMP, dist(STOPS[k][m], STOPS[k][m + 1]) * 0.45);
+function box(k, m) { // a stretch's field, road, detour and camp: the active band and the tap target
+  const a = STOPS[k][m], b = STOPS[k][m + 1], n = NORMALS[k][m], out = bump(k, m) + 21;
+  const xs = [a.x + n.x * out, b.x + n.x * out, a.x - n.x * 16, b.x - n.x * 16], ys = [a.y + n.y * out, b.y + n.y * out, a.y - n.y * 16, b.y - n.y * 16];
+  return { x0: Math.round(Math.min(...xs)), y0: Math.round(Math.min(...ys)), x1: Math.round(Math.max(...xs)), y1: Math.round(Math.max(...ys)) };
+}
+function campAt(k, m) {
+  const a = STOPS[k][m], b = STOPS[k][m + 1], n = NORMALS[k][m], out = bump(k, m) + 9;
+  return { x: Math.round((a.x + b.x) / 2 + n.x * out - 12), y: Math.round((a.y + b.y) / 2 + n.y * out - 11) };
+}
+
+// ---------- static background: grass, paths, fields, fences ----------
+const GRASS = ['#93c862', '#7fb755', '#a8d873'];
+function pave(b, x0, y0, x1, y1, w, edge) { // salmon paving; every edge goes down first so the joins stay clean
+  const x = Math.min(x0, x1) - (w >> 1), y = Math.min(y0, y1) - (w >> 1), ww = Math.abs(x1 - x0) + w, hh = Math.abs(y1 - y0) + w;
+  if (edge) { b.fillStyle = '#c86f5b'; b.fillRect(x - 1, y - 1, ww + 2, hh + 2); return; }
+  b.fillStyle = '#e8907a'; b.fillRect(x, y, ww, hh);
+  for (let j = 0; j < hh; j++) for (let i = 0; i < ww; i++) {
+    const h = hash(`p${x + i},${y + j}`) % 23;
+    if (h < 2) { b.fillStyle = h ? '#f3a690' : '#d97f69'; b.fillRect(x + i, y + j, 1, 1); }
+  }
+}
+function fence(b, x0, y0, x1, y1) { // a rail with a post every six pixels
+  const side = (x, y, dx, dy, n) => {
+    for (let i = 0; i <= n; i++) {
+      const px = x + dx * i, py = y + dy * i;
+      b.fillStyle = '#9c7a52'; b.fillRect(px, py, 1, 1);
+      if (i % 6 === 0) { b.fillStyle = '#6b4a2e'; b.fillRect(px - dy, py - 2 * dx, 1 + 2 * dy, 1 + 2 * dx); }
+    }
+  };
+  side(x0, y0, 1, 0, x1 - x0); side(x0, y1, 1, 0, x1 - x0); side(x0, y0, 0, 1, y1 - y0); side(x1, y0, 0, 1, y1 - y0);
+}
+function field(b, k, m) { // the month's paddy beside its stretch, on the side away from the detour
+  const a = STOPS[k][m], z = STOPS[k][m + 1], n = NORMALS[k][m], len = Math.round(dist(a, z)), dx = (z.x - a.x) / len, dy = (z.y - a.y) / len, tile = FIELDS[m];
+  for (let j = 3; j < len - 3; j++) for (let i = -1; i <= 10; i++) {
+    const edge = i < 0 || i > 9 || j === 3 || j === len - 4, ch = edge ? null : tile[i][(j - 4) % 12];
+    b.fillStyle = edge ? '#86653f' : ch === '.' ? '#8f6e47' : PAL[ch];
+    b.fillRect(Math.round(a.x + dx * j - n.x * (5 + i)), Math.round(a.y + dy * j - n.y * (5 + i)), 1, 1);
+  }
+}
 function paintBackground() {
-  const b = bgC.getContext('2d'), sky = ['#86c4dc', '#8fcae0', '#98cfe3', '#a1d4e6', '#aad8e8', '#b3dceb', '#bce0ec', '#c4e4ee'];
-  for (let y = 0; y < 26; y++) { b.fillStyle = sky[Math.min(7, Math.floor(y / 3.2))]; b.fillRect(0, y, W, 1); }
-  for (let y = 26; y < H; y++) for (let x = 0; x < W; x++) {
+  const b = bgC.getContext('2d');
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const h = hash(`${x},${y}`) % 97;
-    b.fillStyle = h === 0 || h === 41 ? '#5f9447' : h === 7 ? '#93c46a' : '#78ae58';
+    b.fillStyle = h === 0 || h === 41 ? GRASS[1] : h === 7 ? GRASS[2] : GRASS[0];
     b.fillRect(x, y, 1, 1);
   }
-  b.fillStyle = '#93c46a'; b.fillRect(0, 26, W, 1); b.fillStyle = '#5f9447'; b.fillRect(0, 27, W, 1);
-  for (let k = 0; k < 4; k++) {
-    const ry = roadY(k);
-    for (let m = 0; m < MONTHS; m++) {
-      const x0 = A(m) + 2, x1 = A(m + 1) - 2, tile = FIELDS[m];
-      b.fillStyle = '#86653f'; b.fillRect(x0 - 1, ry + 5, x1 - x0 + 2, 12);
-      for (let y = 0; y < 10; y++) for (let x = x0; x < x1; x++) { const ch = tile[y][(x - x0) % 12]; b.fillStyle = ch === '.' ? '#8f6e47' : PAL[ch]; b.fillRect(x, ry + 6 + y, 1, 1); }
-    }
-    road(b, 30, ry - 1, VROAD + 3 - 30, 4);
-  }
-  road(b, VROAD - 1, roadY(0) - 1, 4, roadY(3) - roadY(0) + 4);
-  road(b, VROAD - 1, YARD - 1, DOOR.x - VROAD + 3, 4);
-  road(b, DOOR.x - 2, DOOR.y, 4, YARD - DOOR.y + 2);
-  for (let k = 0; k < 3; k++) for (let x = 0; x < VROAD - 3; x++) {
-    if (x % 6 === 0) { b.fillStyle = '#6b4a2e'; b.fillRect(x, laneTop(k + 1) - 2, 1, 3); }
-    b.fillStyle = '#9c7a52'; b.fillRect(x, laneTop(k + 1) - 1, 1, 1);
-  }
-  for (let i = 0; i < Math.round(W / 7); i++) { // wildflowers, kept off the roads and fields
-    const h = hash('f' + i), x = h % (VROAD - 40) + 36, y = 30 + (h >> 9) % 230, ry = roadY(Math.min(3, Math.floor((y - 28) / 60)));
-    if (y > ry - 3 && y < ry + 19) continue;
+  fence(b, 42, 238, MID - 42, 268); // garden
+  fence(b, MID + 34, 206, W - 6, 268); // paddock
+  fence(b, 112, 170, MID - 24, 170); // hedge between B's fields and A's camps
+  b.fillStyle = '#86653f'; for (const y of BEDS) b.fillRect(48, y - 1, MID - 96, 3);
+  const ways = [[MID, DOOR.y, MID, ROAD_Y[0], 9], [MID - 26, DOOR.y + 2, MID + 26, DOOR.y + 8, 9]]; // main road and the school plaza
+  STOPS.forEach((s, k) => ways.push([s[0].x, HOUSE_FOOT, s[0].x, ROAD_Y[k], 7], [s[0].x, ROAD_Y[k], MID, ROAD_Y[k], 7]));
+  for (const edge of [true, false]) ways.forEach(([x0, y0, x1, y1, w]) => pave(b, x0, y0, x1, y1, w, edge));
+  STOPS.forEach((_, k) => { for (let m = 0; m < MONTHS; m++) field(b, k, m); });
+  const img = b.getImageData(0, 0, W, H).data, grass = (x, y) => img[(y * W + x) * 4] === 0x93 && img[(y * W + x) * 4 + 1] === 0xc8;
+  for (let i = 0; i < Math.round(W / 6); i++) { // wildflowers, kept off the paths and fields
+    const h = hash('f' + i), x = h % (W - 4) + 2, y = 2 + (h >> 9) % (H - 6);
+    if (!grass(x, y) || !grass(x, y + 1)) continue;
     b.fillStyle = ['#f4f1de', '#ffd77a', '#e7a7a0', '#ef8e3c'][h % 4]; b.fillRect(x, y, 1, 1);
     b.fillStyle = '#3f6e3a'; b.fillRect(x, y + 1, 1, 1);
   }
@@ -147,10 +180,10 @@ function paintBackground() {
 
 // ---------- paths ----------
 function segment(k, m, action) {
-  const pts = [], y0 = roadY(k) + 1, x0 = A(m), x1 = A(m + 1);
-  for (let x = x0; x <= x1; x++) {
-    const t = (x - x0) / (x1 - x0);
-    pts.push({ x, y: action === 'avoid' ? Math.round(y0 - 22 * Math.pow(Math.sin(Math.PI * t), 0.9)) : y0 });
+  const a = STOPS[k][m], b = STOPS[k][m + 1], n = NORMALS[k][m], len = Math.round(dist(a, b)), h = bump(k, m), pts = [];
+  for (let s = 0; s <= len; s++) {
+    const t = s / len, off = action === 'avoid' ? h * Math.pow(Math.sin(Math.PI * t), 0.9) : 0;
+    pts.push({ x: Math.round(a.x + (b.x - a.x) * t + n.x * off), y: Math.round(a.y + (b.y - a.y) * t + n.y * off) });
   }
   return pts;
 }
@@ -163,7 +196,7 @@ function polyline(list) {
   out.push(list.at(-1));
   return out;
 }
-const toSchool = k => polyline([{ x: A(6), y: roadY(k) + 1 }, { x: VROAD, y: roadY(k) + 1 }, { x: VROAD, y: YARD + 1 }, { x: DOOR.x, y: YARD + 1 }, { x: DOOR.x, y: DOOR.y }]);
+const toSchool = k => polyline([STOPS[k][MONTHS], { x: MID, y: ROAD_Y[k] }, { x: MID, y: DOOR.y }]);
 const stopShort = pts => pts.slice(0, Math.floor(pts.length * 0.55));
 
 // ---------- following the game state ----------
@@ -174,9 +207,15 @@ document.querySelector('#teams').addEventListener('click', e => {
   const button = e.target.closest('[data-action]'), team = e.target.closest('.team');
   if (button && team && !button.disabled) chosen[team.dataset.team] = button.dataset.action;
 }, true);
-canvas.addEventListener('click', e => { // tap a household's lane to open its panel
-  const box = canvas.getBoundingClientRect(), y = (e.clientY - box.top) / box.height * H;
-  const k = Math.max(0, Math.min(3, Math.floor((y - 28) / 60))), t = window.paperweights?.state().teams[k];
+canvas.addEventListener('click', e => { // tap a household's road or home to open its panel
+  const r = canvas.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * W, y = (e.clientY - r.top) / r.height * H;
+  const away = q => Math.hypot(Math.max(q.x0 - x, 0, x - q.x1), Math.max(q.y0 - y, 0, y - q.y1));
+  let best = null;
+  HOUSES.forEach((h, k) => {
+    const d = Math.min(away({ x0: h.x, y0: h.y, x1: h.x + SPR.house[k][0].length, y1: HOUSE_FOOT }), ...STOPS[k].slice(1).map((_, m) => away(box(k, m))));
+    if (d < 12 && (!best || d < best.d)) best = { k, d };
+  });
+  const t = best && window.paperweights?.state().teams[best.k];
   if (t) modal.open(t.id);
 });
 
@@ -226,47 +265,51 @@ function advance(dt) {
     if (v.walk.d >= v.walk.pts.length - 1) { const w = v.walk; v.trail.push(...w.pts); v.walk = null; w.end?.(); }
   }
 }
-const position = (k, v) => v.walk ? v.walk.pts[Math.min(v.walk.pts.length - 1, Math.floor(v.walk.d))] : v.trail.at(-1) || { x: A(0), y: roadY(k) + 1 };
+const position = (k, v) => v.walk ? v.walk.pts[Math.min(v.walk.pts.length - 1, Math.floor(v.walk.d))] : v.trail.at(-1) || STOPS[k][0];
+function facing(k, v) { // children face the way they walk; C, coming from the right, faces west
+  if (v.walk) {
+    const i = Math.min(v.walk.pts.length - 1, Math.floor(v.walk.d)), a = v.walk.pts[Math.max(0, i - 2)], b = v.walk.pts[i];
+    if (a.x !== b.x) return b.x < a.x;
+  }
+  return k === 2;
+}
 
 // ---------- frame ----------
 function paint(state, now) {
   g.clearRect(0, 0, W, H);
   texts = [];
-  for (let i = 0; i < 3; i++) {
-    const cx = ((reduceMotion ? 0 : now / 1000 * (2 + i * 0.6)) + i * 190 + 40) % (W + 60) - 40;
-    g.globalAlpha = 0.9; draw(SPR.cloud, cx, [1, 6, 0][i]); g.globalAlpha = 1;
-  }
-  if (!reduceMotion) { const ph = (now / 1000) % 16; if (ph < 9) for (let b = 0; b < 3; b++) draw(SPR.bird[Math.floor(now / 220 + b) % 2], ph * 60 - 30 - b * 9, 16 + (b % 2) * 3); }
-  g.fillStyle = 'rgba(255,255,255,.55)';
-  for (let m = 0; m <= MONTHS; m++) for (let y = 22; y < H - 2; y += 3) g.fillRect(A(m), y, 1, 1);
-  // the column each household is deciding, as the game's active band
+  // the stretch each household is deciding, as the game's active band
   state.teams.forEach((t, k) => {
     const m = t.activeBand?.index;
     if (m == null || m >= MONTHS || views[k].walk) return;
-    const x0 = A(m) + 1, x1 = A(m + 1), y0 = laneTop(k) + 1, y1 = laneTop(k) + 58, dense = reduceMotion || Math.floor(now / 520) % 2;
-    g.fillStyle = 'rgba(255,255,240,.16)'; g.fillRect(x0, y0, x1 - x0, y1 - y0);
+    const q = box(k, m), step = reduceMotion || Math.floor(now / 520) % 2 ? 1 : 2;
+    g.fillStyle = 'rgba(255,255,240,.18)'; g.fillRect(q.x0, q.y0, q.x1 - q.x0, q.y1 - q.y0);
     g.fillStyle = '#fffbe8';
-    for (const x of [x0, x1 - 1]) for (let y = y0; y < y1; y += dense ? 1 : 2) g.fillRect(x, y, 1, 1);
+    for (let x = q.x0; x < q.x1; x += step) { g.fillRect(x, q.y0, 1, 1); g.fillRect(x, q.y1 - 1, 1, 1); }
+    for (let y = q.y0; y < q.y1; y += step) { g.fillRect(q.x0, y, 1, 1); g.fillRect(q.x1 - 1, y, 1, 1); }
   });
-  for (const [name, v, m, f, lane] of SCENERY) { const rows = pick(name, v); draw(rows, A(m) + Math.round(CW * f) - Math.floor(rows[0].length / 2), roadY(lane) - 4 - rows.length); }
-  for (const [name, v, x, yb] of YARD_PROPS) { const rows = pick(name, v); draw(rows, SCHOOL.x + x - Math.floor(rows[0].length / 2), yb - rows.length); }
-  BLOOMS.forEach(([v, m, f, lane]) => { const rows = FLOWERS[v]; draw(rows, A(m) + Math.round(CW * f) - Math.floor(rows[0].length / 2), roadY(lane) - 3 - rows.length); });
+  for (const [name, v, a, dx, foot] of PROPS) { const rows = pick(name, v); draw(rows, anchor(a, dx) - Math.floor(rows[0].length / 2), foot - rows.length); }
+  BEDS.forEach((y, i) => { for (let x = 52; x < MID - 56; x += 10) draw(FLOWERS[i], x, y + 1 - FLOWERS[i].length); });
   PETS.forEach((pet, i) => paintPet(pet, i, now));
   paintPups(now);
-  SPR.house.forEach((rows, k) => draw(rows, 0, roadY(k) + 3 - rows.length, k));
-  draw(SPR.school[reduceMotion ? 0 : Math.floor(now / 450) % 2], SCHOOL.x, SCHOOL.y);
-  if (!reduceMotion) for (const [sx, sy] of [[10, roadY(1) - 28], [32, roadY(3) - 25]]) for (let p = 0; p < 5; p++) { // chimney smoke
+  HOUSES.forEach((h, k) => draw(SPR.house[k], h.x, h.y, k));
+  draw(SPR.schoolSmall[reduceMotion ? 0 : Math.floor(now / 700) % 2], SCHOOL.x, SCHOOL.y);
+  if (!reduceMotion) for (let p = 0; p < 5; p++) { // chimney smoke from B's house
     const ph = (now / 1000 * 0.35 + p / 5) % 1, s = ph > 0.5 ? 2 : 1;
     g.globalAlpha = (1 - ph) * 0.8; g.fillStyle = '#e9e6dc';
-    g.fillRect(Math.round(sx + Math.sin(ph * 6 + p) * 1.5 + ph * 6), Math.round(sy - ph * 16), s, s);
+    g.fillRect(Math.round(HOUSES[1].x + 10 + Math.sin(ph * 6 + p) * 1.5 + ph * 6), Math.round(HOUSES[1].y - ph * 16), s, s);
   }
   g.globalAlpha = 1;
-  views.forEach((v, k) => v.camps.forEach(m => draw(SPR.camp[reduceMotion ? 1 : Math.floor(now / 600 + k) % 2], A(m) + CW / 2 - 12, roadY(k) - 41)));
+  views.forEach((v, k) => v.camps.forEach(m => { const c = campAt(k, m); draw(SPR.camp[reduceMotion ? 1 : Math.floor(now / 600 + k) % 2], c.x, c.y); }));
   views.forEach(v => {
     const pts = v.walk ? v.trail.concat(v.walk.pts.slice(0, Math.floor(v.walk.d) + 1)) : v.trail;
     g.fillStyle = v.stopped ? '#f6d8cf' : '#fffbe8';
     pts.forEach((p, i) => { if (i % 3 === 0) g.fillRect(p.x, p.y, 1, 1); });
   });
+  STOPS.forEach((_, k) => { for (let m = 0; m < MONTHS; m++) { // stop numbers on the fields
+    const a = STOPS[k][m], b = STOPS[k][m + 1], n = NORMALS[k][m];
+    label(String(m + 1), (a.x + b.x) / 2 - n.x * 10, (a.y + b.y) / 2 - n.y * 10, 8, '#fffbe8', { fill: '#6b4a2e', border: '#3a2a1c' });
+  } });
   views.forEach((v, k) => {
     if (v.arrived) return;
     const p = position(k, v), id = TEAMS[k].id;
@@ -274,13 +317,13 @@ function paint(state, now) {
     let frame = 0, bob = 0;
     if (v.walk) { frame = [1, 2, 3, 2][Math.floor(v.walk.d / 4) % 4]; bob = frame === 2 ? -1 : 0; }
     else if (!reduceMotion && Math.floor(now / 700 + k) % 2) bob = -1;
-    draw(SPR.kids[id][frame], p.x - 7, p.y - 19 + bob, k);
+    draw(SPR.kids[id][frame], p.x - 7, p.y - 19 + bob, k, facing(k, v));
   });
   let slot = 0;
   views.forEach((v, k) => {
     const id = state.teams[k].id;
-    if (v.arrived) { // team flag on the school fence
-      const fx = SCHOOL.x + [6, 19, 59, 72][slot++], fy = 180;
+    if (v.arrived) { // team flag beside the school
+      const fx = MID + [-40, 36, -52][slot++], fy = SCHOOL.y + 26;
       g.fillStyle = '#5a5650'; g.fillRect(fx, fy, 1, 17);
       label(id, fx + 6, fy + 4, 10, '#1b1720', { fill: TEAMS[k].t, border: '#1b1720' });
       if (!reduceMotion && Math.floor(now / 300) % 3 === 0) draw(SPR.star, fx - 3, fy - 14);
@@ -293,12 +336,18 @@ function paint(state, now) {
   ctx.drawImage(bgC, 0, 0, canvas.width, canvas.height);
   ctx.drawImage(fgC, 0, 0, canvas.width, canvas.height);
   const sx = canvas.width / W;
-  views.forEach((v, k) => { if (v.stopped) { ctx.fillStyle = 'rgba(20,16,26,.38)'; ctx.fillRect(Math.round(A(0) * sx), Math.round(laneTop(k) * sx), Math.round((A(6) - A(0)) * sx), Math.round(58 * sx)); } });
+  views.forEach((v, k) => { // dim a stopped child's whole road, as one shape so the bends are not darker
+    if (!v.stopped) return;
+    ctx.fillStyle = 'rgba(20,16,26,.38)';
+    ctx.beginPath();
+    for (let m = 0; m < MONTHS; m++) { const q = box(k, m); ctx.rect(Math.round(q.x0 * sx), Math.round(q.y0 * sx), Math.round((q.x1 - q.x0) * sx), Math.round((q.y1 - q.y0) * sx)); }
+    ctx.fill();
+  });
   drawLabels(sx);
 }
 
-function paintPet([kind, lane, m, f], i, now) {
-  const t = reduceMotion ? 0 : now / 1000 + i * 1.37, cx = A(m) + Math.round(CW * f), base = roadY(lane) - 3;
+function paintPet([kind, a, dx, foot], i, now) {
+  const t = reduceMotion ? 0 : now / 1000 + i * 1.37, cx = anchor(a, dx), base = foot;
   const at = (rows, dx = 0, dy = 0, flipX = false) => draw(rows, cx + dx - Math.floor(rows[0].length / 2), base + dy - rows.length, 0, flipX);
   const pulse = (period, on) => (t % period) < on; // true for `on` seconds of every `period`
   if (kind === 'dogSit') return at(ANIMALS.dogSit[pulse(2.6, 1.1) && Math.floor(t * 6) % 2 ? 1 : 0]);   // tail wag, then rest
@@ -327,9 +376,9 @@ function paintPet([kind, lane, m, f], i, now) {
   if (kind === 'chick') return at(ANIMALS.chick[Math.floor(t / 0.45) % 2], 0, pulse(1.3, 0.15) ? -1 : 0);
 }
 
-// Two dogs playing in front of the school: chase across, play-bow face to face, swap and chase back.
+// Two dogs playing beside the school: chase across, play-bow face to face, swap and chase back.
 function paintPups(now) {
-  const x0 = SCHOOL.x + 26, x1 = SCHOOL.x + 64, gap = 15, feet = 216, T = 6;
+  const x0 = MID + 44, x1 = MID + 86, gap = 15, feet = 128, T = 6;
   const put = (pup, frame, x, left) => { const rows = PUPS[pup][frame]; draw(rows, x - Math.floor(rows[0].length / 2), feet - rows.length, 0, left); };
   if (reduceMotion) { put(0, 'bow', x0 + 8, false); put(1, 'bow', x0 + 8 + gap, true); return; }
   const t = (now / 1000) % (2 * T), back = t >= T, c = t % T, stride = Math.floor(now / 120) % 2 ? 'run' : 'run2';
@@ -366,9 +415,10 @@ function fit() { // fill the map area; only very tall, narrow screens get bands 
   canvas.style.height = `${width * H / W}px`;
   canvas.width = Math.round(width * dpr);
   canvas.height = Math.round(width * dpr * H / W);
-  footer.style.setProperty('--cw', `${width}px`); // keep HOME under the houses and SCHOOL under the school
-  footer.style.setProperty('--home', 26 / W);
-  footer.style.setProperty('--school', (SCHOOL.x + 44) / W);
+  footer.style.setProperty('--cw', `${width}px`); // keep each HOME under its houses and SCHOOL under the school
+  footer.style.setProperty('--home', (HOUSES[0].x + HOUSES[1].x + 36) / 2 / W);
+  footer.style.setProperty('--home-right', (HOUSES[2].x + 18) / W);
+  footer.style.setProperty('--school', MID / W);
 }
 new ResizeObserver(fit).observe(document.querySelector('.shared-map'));
 window.addEventListener('resize', fit);

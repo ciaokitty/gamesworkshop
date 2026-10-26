@@ -17,7 +17,7 @@ const contexts = Object.freeze([
   { id: 'C06', colorName: 'PINK', light: '#a24b7d', dark: '#ce83ae' },
 ]);
 
-const teamIds = ['A', 'B', 'C', 'D'];
+const teamIds = ['A', 'B', 'C'];
 
 export function cardKind(category, value, mode = 'hard') {
   if (mode === 'hard') return 'normal';
@@ -235,7 +235,7 @@ export function createPack(seed = 15, count = 200, mode = 'hard') {
     const rounds=Array.from({length:6},(_,i)=>currentRound({seed:normalizedSeed,mode},teamIndex,Array(i).fill('go')));
     const archiveRng=makeRng(hashSeed(normalizedSeed,'archive',teamId));
     historiesByTeam[teamId]=Array.from({length:3600},(_,i)=>drawRow(archiveRng,teamId,i,i%6,mode));
-    return {id:teamId,rounds,audienceCount:Math.floor(sheetCount/4)+(teamIndex<sheetCount%4?1:0)};
+    return {id:teamId,rounds,audienceCount:Math.floor(sheetCount/teamIds.length)+(teamIndex<sheetCount%teamIds.length?1:0)};
   });
   return {
     version: mode === 'hard' ? 'HH2' : 'HH4',

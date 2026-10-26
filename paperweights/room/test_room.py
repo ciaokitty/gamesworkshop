@@ -69,8 +69,18 @@ class RoomTests(unittest.TestCase):
         # A phone sees its Extended vote; the four room teams are untouched.
         r.phones={'p':1};self.assertEqual(r.me('p')['vote']['kind'],'extended')
         self.assertTrue(all(deck.in_vote(s,'A')==(deck.team(s)=='A') for s in range(1,41)))
-        hh=r.open('A','household',cue='C01:cash:loan')
-        self.assertTrue(all(deck.team(s)=='A' for _,vid,_,s in r.timers if vid==hh['id']))
+
+    def test_household_votes_use_three_teams(self):
+        r=self.room();r.bots=200
+        hh=r.open('HA','household',cue='C01:cash:loan')
+        voters={s for _,vid,_,s in r.timers if vid==hh['id']}
+        self.assertTrue(voters and all(deck.hh_team(s)=='A' for s in voters))
+        self.assertEqual(r.tally(hh)['eligible'],sum(deck.hh_team(s)=='A' for s in r.bot_seats()))
+        self.assertEqual([sum(deck.hh_team(s)==t for s in range(1,201)) for t in 'ABC'],[67,67,66])
+        # Rover keeps the four room teams; a phone sees its Households team's vote.
+        self.assertTrue(all(deck.in_vote(s,'A')==(deck.team(s)=='A') for s in range(1,41)))
+        r.phones={'p':3};r.open('HC','household',cue='C01:cash:loan')
+        self.assertEqual(r.me('p')['vote']['kind'],'household');self.assertEqual(r.sheet(3)['hhTeam'],'C')
 
     def test_home_vote_asks_the_whole_room(self):
         r=self.room();r.bots=200
@@ -86,15 +96,15 @@ class RoomTests(unittest.TestCase):
 
     def test_no_data_waiting_and_voting_are_distinct(self):
         r=self.room();r.bots=20
-        empty=r.open('A','household',cue='C04:harvest:good')
+        empty=r.open('HA','household',cue='C04:harvest:good')
         self.assertEqual(r.tally(empty)['status'],'no-data')
-        useful=r.open('A','household',cue='C01:cash:loan')
+        useful=r.open('HA','household',cue='C01:cash:loan')
         tally=r.tally(useful)
         self.assertGreater(tally['matching'],0);self.assertEqual(tally['status'],'waiting')
-        seat=next(s for s in r.bot_seats() if deck.team(s)=='A' and r.choices(useful,s))
+        seat=next(s for s in r.bot_seats() if deck.hh_team(s)=='A' and r.choices(useful,s))
         r.ballot(useful,seat,r.choices(useful,seat)[0])
         self.assertEqual(r.tally(useful)['status'],'voting')
-        excluded=r.open('A','household',cue='C01:cash:loan',exclude=deck.FLIPS)
+        excluded=r.open('HA','household',cue='C01:cash:loan',exclude=deck.FLIPS)
         self.assertEqual(r.tally(excluded)['status'],'no-data')
         self.assertFalse(r.choices(excluded,seat))
 

@@ -14,6 +14,10 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
 BUCKETS = (12, 15, 20, 30, 50, 75, 100, 150, 200)
 TEAMS = 'ABCD'
+# Households: three teams (one per home), dealt round-robin like the room teams.
+# Its votes use keys HA/HB/HC, so Rover keeps the four room teams.
+HH_TEAMS = 'ABC'
+HH_KEYS = tuple('H' + t for t in HH_TEAMS)
 
 _spec = importlib.util.spec_from_file_location('mixed', ROOT / 'paperweights/robot-majority/mixed.py')
 mixed = importlib.util.module_from_spec(_spec)
@@ -69,6 +73,11 @@ def member(seat):
     return (seat - 1) // 4
 
 
+def hh_member(seat):
+    """Position of a seat within its Households team: seats 1-3 are members 0 of A-C."""
+    return (seat - 1) // len(HH_TEAMS)
+
+
 def rover_squares(seat):
     squares = list(HAZARDS)
     change = PATTERN[member(seat) % len(PATTERN)]
@@ -95,7 +104,7 @@ ROWS = 24
 def household_rows(seat):
     """24 rows: color + card -> category to flip. Mostly the archive's best flip, some noise."""
     rng = random.Random(f'household-{seat}')
-    j = member(seat)
+    j = hh_member(seat)
     keys = [k for k in LIVE if rng.random() < 0.85]
     keys += rng.sample(EXTRA, max(0, ROWS - len(keys)))
     keys = keys[:ROWS]
@@ -121,6 +130,10 @@ def team(seat):
     return TEAMS[(seat - 1) % 4]
 
 
+def hh_team(seat):
+    return HH_TEAMS[(seat - 1) % len(HH_TEAMS)]
+
+
 def ext_team(seat):
     return EXT_TEAMS[(seat - 1) % len(EXT_TEAMS)]
 
@@ -141,6 +154,8 @@ def in_vote(seat, key):
     """Whether this seat answers a vote: everyone for words and the Part 2 home, its team otherwise."""
     if key in ('word', HOME_KEY):
         return True
+    if key in HH_KEYS:
+        return 'H' + hh_team(seat) == key
     if key in EXT_KEYS:
         return 'E' + ext_team(seat) == key
     return team(seat) == key

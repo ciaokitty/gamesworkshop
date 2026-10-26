@@ -210,6 +210,23 @@ function school(wave = 0) {
   return rows(outline(g));
 }
 
+function schoolSmall(swing = 0) { // compact, no flagpole: the Households village centre. The bell swings.
+  const g = grid(62, 46);
+  rect(g, 6, 22, 50, 20, 'w'); rect(g, 6, 22, 2, 20, 'W'); rect(g, 6, 36, 50, 6, 'v'); hl(g, 6, 36, 50, 'V'); hl(g, 6, 22, 50, 'v');
+  for (let y = 13; y <= 21; y++) { const inset = Math.max(0, 21 - y) + 3; for (let x = inset; x < 62 - inset; x++) px(g, x, y, ((x + (y % 2) * 2) % 4 === 0) ? 'R' : 'r'); }
+  hl(g, 2, 21, 58, 'R');
+  rect(g, 24, 5, 14, 9, 'w'); vl(g, 24, 5, 9, 'W');
+  for (let y = 1; y <= 5; y++) for (let x = 31 - y - 2; x <= 30 + y + 2; x++) px(g, x, y, ((x + y) % 3 === 0) ? 'R' : 'r');
+  hl(g, 22, 5, 18, 'R');
+  rect(g, 27, 7, 8, 6, 'K');
+  stamp(g, swing ? ['.oo..', 'oooo.', 'oOoo.', 'ooooo', '.O...'] : ['..oo.', '.oooo', '.oOoo', 'ooooo', '...O.'], 28, 8);
+  rect(g, 17, 24, 28, 9, 'v'); hl(g, 17, 24, 28, 'V'); hl(g, 17, 32, 28, 'V'); text(g, 'SCHOOL', 20, 26, 'w');
+  for (const wx of [9, 47]) { rect(g, wx, 25, 6, 8, 'V'); rect(g, wx + 1, 26, 4, 6, 'q'); vl(g, wx + 2, 26, 6, 'K'); vl(g, wx + 4, 26, 6, 'K'); px(g, wx + 1, 26, 'a'); }
+  rect(g, 26, 33, 10, 9, 'V'); rect(g, 27, 34, 3, 8, 'v'); rect(g, 32, 34, 3, 8, 'v'); px(g, 30, 38, 'o'); px(g, 32, 38, 'o');
+  rect(g, 23, 42, 16, 2, 'c'); hl(g, 23, 42, 16, 'a');
+  return rows(outline(g));
+}
+
 // --- support camp (intervention) ---
 function camp(beat = 0) {
   const g = grid(24, 23);
@@ -439,7 +456,7 @@ export const ZZZ = ['666', '..6', '.6.', '6..', '666'];
 // --- build the sprite catalogue ---
 export const SPR = {
   house: [hut(), tiled(), pucca(), tin()],
-    school: [school(0), school(1)],
+    school: [school(0), school(1)], schoolSmall: [schoolSmall(0), schoolSmall(1)],
   camp: [camp(0), camp(1)],
   kids: Object.fromEntries(['A', 'B', 'C', 'D'].map(t => [t, [0, 1, 2, 3].map(f => kid(t, f))])),
   kidSad: Object.fromEntries(['A', 'B', 'C', 'D'].map(t => [t, kidSad(t)])),

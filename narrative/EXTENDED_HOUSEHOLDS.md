@@ -250,7 +250,7 @@ Run `./run-summit.sh`, open `/audience` on phones, and set the bots on the landi
 - **What the audience votes on.** As in Households Indicators, the audience suggests **which
   card to flip next**. It does not vote on Skip or Intervene.
 - **Teams.** For this game the room splits into **Teams A, B and C**: sheet k is Team
-  `ABC[(k-1) mod 3]`. The other games keep their four teams A-D.
+  `ABC[(k-1) mod 3]`. Households uses the same three-way split; Rover keeps its four teams A-D.
 - **Sheets.** Each sheet holds about 20 rows from its team's **own village**, dealt by
   `extended-households/audience.mjs`. Rows are a colour block and the card's state as a word (STORM,
   TIGHT), an arrow, then a dashed face-down box naming the card to flip (HARVEST).

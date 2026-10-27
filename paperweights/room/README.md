@@ -21,10 +21,8 @@ Pages served by the plain 8684 server find no `/api/room` and keep their simulat
 | Sentences, Majority word | everyone | Tap the word that matches, if any | bars; click one to accept, or Accept = top |
 | Rover Competitive, Risks | the rep's team | Team X: GO or AVOID? (no cards; the data side shows the Households dropout to avoid) | GO / AVOID percentages under the team |
 | Households Competitive, Indicators | the team's Households group (A, B or C) | Tap the row that matches (latest card) | FLIP percentages under the AI estimate |
-| Extended Households, Part 1 | the team's Extended group (A, B or C) | Which card to flip? Tap the row that matches (latest card) | FLIP percentages in the team's modal |
-| Extended Households, Part 2 | everyone (vote key `EH`, kind `home`) | One home: which card to flip? Tap the row that matches (latest card) | FLIP percentages in the family's dialog |
 
-Teams: sheet k is team `ABCD[(k-1) % 4]` for Rover. Households regroups the same seats into `ABC[(k-1) % 3]` (vote keys `HA`/`HB`/`HC`), and so does Extended Households (vote keys `EA`/`EB`/`EC`), for their votes only. A rep's Go/Avoid, a card flip or Reset closes that vote. Navigating to another activity (including landing, collaborative and Icons) closes old votes without clearing the roster.
+Teams: sheet k is team `ABCD[(k-1) % 4]` for Rover. Households regroups the same seats into `ABC[(k-1) % 3]` (vote keys `HA`/`HB`/`HC`) for its votes only. A rep's Go/Avoid, a card flip or Reset closes that vote. Navigating to another activity (including landing, collaborative and Icons) closes old votes without clearing the roster.
 
 Empty polls distinguish **Waiting for votes** from **No matching card suggestion**. The latter means nobody in that team has a usable matching row, after excluding already revealed categories; it is not a recommendation to Skip.
 
@@ -37,11 +35,6 @@ Empty polls distinguish **Waiting for votes** from **No matching card suggestion
 - Households: 24 rows `context colour + card -> category to flip`, from the Indicators archive's
   information gain (`household-answers.mjs` -> `household-answers.json`), weighted toward cards
   that occur in the seed-15 game, about one noisy row per seven team members per card.
-
-- Extended Households: about 20 rows per seat from `extended-households/audience-sheets.json`
-  (`colour + card -> card to flip`, by information gain in the team's own village, ~1 in 7 noisy),
-  plus about 30 Part 2 rows per seat from the home's history (gain about any ladder slipping).
-  `node extended-households/audience.mjs` deals them and prints the 200-person report.
 
 Simulated seed-15 Households (the game we play): AI alone survives 2.5/6 months, no team
 finishes; AI plus the audience's flips survives about 4.7/6, half the teams finish, with 50%

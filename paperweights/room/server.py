@@ -226,8 +226,10 @@ class Handler(SimpleHTTPRequestHandler):
             activity = 'sentences'
         elif url.path in ('/paperweights/web/', '/paperweights/web/index.html', '/paperweights/web/shared-map.html'):
             activity = q.get('scenario', 'rover')
-        elif url.path in ('/households/', '/households/index.html'):
+        elif url.path in ('/households/', '/households/index.html', '/households/icons.html'):
             activity = 'icons'
+        elif url.path.rstrip('/') in ('/omens', '/households/omens.html'):
+            activity = 'omens'
         elif url.path in ('/extended-households/', '/extended-households/index.html'):
             activity = 'extended-households'
         if activity is not None:
@@ -242,6 +244,8 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.api_get(url.path[len('/api/room'):], q)
         if url.path == '/' or url.path == '/index.html':
             self.path = '/index.html'
+        if url.path.rstrip('/') == '/omens':
+            self.path = '/households/omens.html'
         return super().do_GET()
 
     def api_get(self, path, q):

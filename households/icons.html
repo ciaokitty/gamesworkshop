@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OMENS - Icons</title>
+<link rel="stylesheet" href="/households/omens.css">
+</head>
+<body>
+<main class="table-screen">
+  <header><a class="back" href="/omens">OMENS</a><h1>ICONS</h1></header>
+  <section class="icon-table" id="icons" aria-label="Households card icons"></section>
+</main>
+<script type="module">
+// The card faces exactly as the game draws them, labelled in the game's font.
+import { pixelIcons } from '/households/pixel-cards.js';
+try { if (localStorage.getItem('paperweights.theme.v1') === 'light') document.documentElement.dataset.theme = 'light'; } catch {}
+const families = { harvest: ['good', 'weak', 'failed'], cash: ['enough', 'low', 'loan'], attendance: ['regular', 'irregular', 'dropout'], weather: ['sun', 'rain', 'storm'] };
+document.querySelector('#icons').innerHTML = Object.entries(families).map(([cat, states]) =>
+  `<h2>${cat.toUpperCase()}</h2>` + states.map(s => `<div class="face" role="img" aria-label="${cat}: ${s}">${pixelIcons[cat][s]}<b>${s.toUpperCase()}</b></div>`).join('')).join('');
+document.addEventListener('keydown', e => { if (e.key === 'Escape' || e.key === 'Backspace') location.href = '/omens'; });
+</script>
+</body>
+</html>

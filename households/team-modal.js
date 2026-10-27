@@ -44,6 +44,8 @@ new MutationObserver(decorate).observe(teams, { childList: true });
 export function open(id) {
   if (openId === id) return;
   openId = id;
+  const k = [...teams.querySelectorAll('.team')].findIndex(el => el.dataset.team === id);
+  window.paperweights?.peek(k, 0); // always open on the current deck
   decorate();
   SFX.open();
   teams.querySelector('.team.open [data-action]:not(:disabled), .team.open .modal-close')?.focus({ preventScroll: true });
@@ -57,12 +59,17 @@ export function close() {
   document.querySelector('#shared-canvas')?.focus({ preventScroll: true });
 }
 
-// Close after Skip or Intervene is accepted, so the map shows the walk.
+// Close after Skip or Help is accepted, so the map shows the walk.
 teams.addEventListener('click', e => {
   const button = e.target.closest('[data-action]'), panel = e.target.closest('.team');
   if (!button || !panel || button.disabled) return;
   setTimeout(() => { const t = window.paperweights?.state().teams.find(x => x.id === panel.dataset.team); if (t && t.status !== 'deciding' && openId === panel.dataset.team) close(); }, 220);
 }, true); // capture: the game disables the button as soon as it acts
+// A losing choice closes at once, before the dialog can draw its OUT state; the map shows the kid stopping.
+teams.addEventListener('click', e => {
+  const panel = e.target.closest('[data-action]') && e.target.closest('.team');
+  if (panel && openId === panel.dataset.team && window.paperweights?.state().teams.find(x => x.id === panel.dataset.team)?.status === 'eliminated') close();
+});
 teams.addEventListener('click', e => { if (e.target === teams) close(); });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') return close();

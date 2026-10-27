@@ -56,7 +56,7 @@ h2{font-size:11px;color:var(--dim);letter-spacing:.08em;font-weight:400;margin:1
 const $ = s => document.querySelector(s);
 const PALETTE = {RED: ['#a74638', '#d06c58'], BLUE: ['#316b8c', '#6ca4c4'], AMBER: ['#8b681d', '#bd9c4e'], GREEN: ['#39785c', '#75ae8e'], PURPLE: ['#72528e', '#ad91c4'], PINK: ['#a24b7d', '#ce83ae']};
 const CONTEXT = {C01: 'RED', C02: 'BLUE', C03: 'AMBER', C04: 'GREEN', C05: 'PURPLE', C06: 'PINK'};
-// For now the sheet is the Households datasheet only (no words or Extended Households rows).
+// For now the sheet is the Households datasheet only (no words rows).
 import { pixelIcons as HH, label, contextMark } from '/households/pixel-cards.js';
 let theme = 'dark';
 try { theme = localStorage.getItem('paperweights.theme.v1') === 'light' ? 'light' : 'dark'; } catch {}

@@ -24,13 +24,6 @@ mixed = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(mixed)
 PRIOR = json.loads((ROOT / 'paperweights/robot-majority/prior-duplex.json').read_text())
 ANSWERS = json.loads((HERE / 'household-answers.json').read_text())
-# Extended Households Part 1: three teams (one per village), sheets dealt by
-# extended-households/audience.mjs. Its votes use keys EA/EB/EC, not the four room teams.
-EXTENDED = json.loads((ROOT / 'extended-households/audience-sheets.json').read_text())
-EXT_TEAMS = 'ABC'
-EXT_KEYS = tuple('E' + t for t in EXT_TEAMS)
-# Part 2 (one home): the whole room answers, from each seat's rows of the home's history.
-HOME_KEY = 'EH'
 FLIPS = ('harvest', 'cash', 'attendance', 'weather')
 
 # Rover Risks: everyone knows most hazards; a few also fear a harmless square or
@@ -134,30 +127,12 @@ def hh_team(seat):
     return HH_TEAMS[(seat - 1) % len(HH_TEAMS)]
 
 
-def ext_team(seat):
-    return EXT_TEAMS[(seat - 1) % len(EXT_TEAMS)]
-
-
-def extended_rows(seat):
-    """About 20 rows of the team's own village: colour + face-up card -> the card to flip next."""
-    rows = EXTENDED['seats'][(seat - 1) % len(EXTENDED['seats'])]
-    return [{'key': key, 'flip': flip} for key, flip in rows]
-
-
-def home_rows(seat):
-    """About 30 rows of the Part 2 home: colour + face-up card -> the card to flip next."""
-    rows = EXTENDED['home'][(seat - 1) % len(EXTENDED['home'])]
-    return [{'key': key, 'flip': flip} for key, flip in rows]
-
-
 def in_vote(seat, key):
-    """Whether this seat answers a vote: everyone for words and the Part 2 home, its team otherwise."""
-    if key in ('word', HOME_KEY):
+    """Whether this seat answers a vote: everyone for words, its team otherwise."""
+    if key == 'word':
         return True
     if key in HH_KEYS:
         return 'H' + hh_team(seat) == key
-    if key in EXT_KEYS:
-        return 'E' + ext_team(seat) == key
     return team(seat) == key
 
 

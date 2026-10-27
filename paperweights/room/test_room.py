@@ -50,26 +50,6 @@ class RoomTests(unittest.TestCase):
         r.open('A','rover');r.enter('rover');self.assertIn('A',r.votes)
         r.enter('collaborative');self.assertEqual(r.votes,{})
 
-    def test_extended_votes_use_three_teams(self):
-        r=self.room();r.bots=200
-        team_a=[s for s in r.bot_seats() if deck.ext_team(s)=='A']
-        key=next(k for k,_ in deck.EXTENDED['seats'][0])  # a cue seat 1 (Team A) holds
-        v=r.open('EA','extended',cue=key)
-        voters={s for _,_,_,s in r.timers}
-        self.assertTrue(voters and voters<=set(team_a))
-        self.assertTrue(all(deck.ext_team(s)=='A' for s in voters))
-        tally=r.tally(v)
-        self.assertEqual(tally['eligible'],len(team_a));self.assertGreater(tally['matching'],0)
-        self.assertEqual(tally['status'],'waiting')
-        seat=next(s for s in team_a if r.choices(v,s))
-        self.assertTrue(set(r.choices(v,seat))<={'weather','expense','harvest','cash','school'})
-        self.assertNotIn(key.split(':')[1],r.choices(v,seat))  # never the card already face up
-        r.ballot(v,seat,r.choices(v,seat)[0]);self.assertEqual(r.tally(v)['status'],'voting')
-        self.assertEqual(r.tally(r.open('EB','extended',cue='C01:nothing:here'))['status'],'no-data')
-        # A phone sees its Extended vote; the four room teams are untouched.
-        r.phones={'p':1};self.assertEqual(r.me('p')['vote']['kind'],'extended')
-        self.assertTrue(all(deck.in_vote(s,'A')==(deck.team(s)=='A') for s in range(1,41)))
-
     def test_household_votes_use_three_teams(self):
         r=self.room();r.bots=200
         hh=r.open('HA','household',cue='C01:cash:loan')
@@ -81,18 +61,6 @@ class RoomTests(unittest.TestCase):
         self.assertTrue(all(deck.in_vote(s,'A')==(deck.team(s)=='A') for s in range(1,41)))
         r.phones={'p':3};r.open('HC','household',cue='C01:cash:loan')
         self.assertEqual(r.me('p')['vote']['kind'],'household');self.assertEqual(r.sheet(3)['hhTeam'],'C')
-
-    def test_home_vote_asks_the_whole_room(self):
-        r=self.room();r.bots=200
-        key=next(k for k,_ in deck.EXTENDED['home'][0])  # a Part 2 cue seat 1 holds
-        v=r.open('EH','home',cue=key,exclude=[key.split(':')[1]])
-        voters={s for _,_,_,s in r.timers}
-        self.assertTrue({deck.ext_team(s) for s in voters}=={'A','B','C'})  # every team answers
-        tally=r.tally(v);self.assertEqual(tally['eligible'],200);self.assertGreater(tally['matching'],0)
-        seat=next(s for s in r.bot_seats() if r.choices(v,s))
-        self.assertTrue(set(r.choices(v,seat))<={'weather','expense','harvest','cash','school'})
-        self.assertNotIn(key.split(':')[1],r.choices(v,seat))
-        r.phones={'p':1};self.assertEqual(r.me('p')['vote']['kind'],'home')
 
     def test_no_data_waiting_and_voting_are_distinct(self):
         r=self.room();r.bots=20

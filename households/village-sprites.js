@@ -188,7 +188,7 @@ export const FONT = {
 function text(g, str, x, y, c) {
   for (const ch of str.toUpperCase()) { const f = FONT[ch] || FONT['?']; for (let i = 0; i < 15; i++) if (f[i] === '1') px(g, x + (i % 3), y + Math.floor(i / 3), c); x += 4; }
 }
-function school(wave = 0) {
+function school(wave = 0, pole = true) { // Households drops the flagpole; Extended Households keeps it
   const g = grid(84, 60);
   rect(g, 10, 27, 66, 25, 'w'); rect(g, 10, 27, 3, 25, 'W'); rect(g, 10, 44, 66, 8, 'v'); hl(g, 10, 44, 66, 'V'); hl(g, 10, 27, 66, 'v');
   for (let y = 17; y <= 26; y++) { const inset = Math.max(0, 26 - y) + 6; for (let x = inset; x < 86 - inset; x++) px(g, x, y, ((x + (y % 2) * 2) % 4 === 0) ? 'R' : 'r'); }
@@ -204,26 +204,10 @@ function school(wave = 0) {
   rect(g, 4, 52, 33, 4, 'c'); rect(g, 49, 52, 33, 4, 'c'); hl(g, 4, 52, 33, 'a'); hl(g, 49, 52, 33, 'a');
   for (let x = 6; x < 37; x += 6) vl(g, x, 52, 4, 'C'); for (let x = 51; x < 82; x += 6) vl(g, x, 52, 4, 'C');
   rect(g, 34, 49, 3, 8, 'C'); rect(g, 49, 49, 3, 8, 'C'); px(g, 35, 48, 'o'); px(g, 50, 48, 'o');
+  if (!pole) return rows(outline(g));
   vl(g, 2, 2, 54, 'C'); px(g, 2, 1, 'o');
   const flag = wave ? ['jjjjjjj.', 'jwwjwwjj', 'jwwjwwjj', 'jjwwwjj.', 'jjjjj...'] : ['jjjjjjjj', 'jwwjwwjj', 'jwwjwwjj', 'jjwwwjjj', 'jjjjjjj.'];
   stamp(g, flag, 3, 2);
-  return rows(outline(g));
-}
-
-function schoolSmall(swing = 0) { // compact, no flagpole: the Households village centre. The bell swings.
-  const g = grid(62, 46);
-  rect(g, 6, 22, 50, 20, 'w'); rect(g, 6, 22, 2, 20, 'W'); rect(g, 6, 36, 50, 6, 'v'); hl(g, 6, 36, 50, 'V'); hl(g, 6, 22, 50, 'v');
-  for (let y = 13; y <= 21; y++) { const inset = Math.max(0, 21 - y) + 3; for (let x = inset; x < 62 - inset; x++) px(g, x, y, ((x + (y % 2) * 2) % 4 === 0) ? 'R' : 'r'); }
-  hl(g, 2, 21, 58, 'R');
-  rect(g, 24, 5, 14, 9, 'w'); vl(g, 24, 5, 9, 'W');
-  for (let y = 1; y <= 5; y++) for (let x = 31 - y - 2; x <= 30 + y + 2; x++) px(g, x, y, ((x + y) % 3 === 0) ? 'R' : 'r');
-  hl(g, 22, 5, 18, 'R');
-  rect(g, 27, 7, 8, 6, 'K');
-  stamp(g, swing ? ['.oo..', 'oooo.', 'oOoo.', 'ooooo', '.O...'] : ['..oo.', '.oooo', '.oOoo', 'ooooo', '...O.'], 28, 8);
-  rect(g, 17, 24, 28, 9, 'v'); hl(g, 17, 24, 28, 'V'); hl(g, 17, 32, 28, 'V'); text(g, 'SCHOOL', 20, 26, 'w');
-  for (const wx of [9, 47]) { rect(g, wx, 25, 6, 8, 'V'); rect(g, wx + 1, 26, 4, 6, 'q'); vl(g, wx + 2, 26, 6, 'K'); vl(g, wx + 4, 26, 6, 'K'); px(g, wx + 1, 26, 'a'); }
-  rect(g, 26, 33, 10, 9, 'V'); rect(g, 27, 34, 3, 8, 'v'); rect(g, 32, 34, 3, 8, 'v'); px(g, 30, 38, 'o'); px(g, 32, 38, 'o');
-  rect(g, 23, 42, 16, 2, 'c'); hl(g, 23, 42, 16, 'a');
   return rows(outline(g));
 }
 
@@ -292,31 +276,46 @@ export const FIELDS = [
 ];
 
 // --- card icons, 16 x 16: the Households card faces ---
-function grain(g, x, h, droop) {
-  vl(g, x, 15 - h, h, 'G');
-  if (droop) { stamp(g, ['YY...', '..Y..', '..Y..', '.OO..', '.OO..', '.O...'], x - 2, 15 - h); return; }
-  stamp(g, ['.o.', 'oOo', 'ooo', 'oOo', 'ooo', '.o.'], x - 1, 15 - h - 5);
-  px(g, x - 1, 15 - h + 2, 'L'); px(g, x + 1, 15 - h + 4, 'L');
-}
-function iconHarvest(v) { const g = grid(16, 16); if (v === 'good') { grain(g, 4, 7); grain(g, 8, 9); grain(g, 12, 7); } else if (v === 'weak') { grain(g, 5, 6); grain(g, 11, 5); } else grain(g, 8, 8, true); hl(g, 1, 15, 14, 'E'); return rows(g); }
-function iconCash(v) {
+// Each factor shows how much is left, so the three states read as a ladder from across the room.
+// Harvest is the pixel copy of the original line icon (assets/icons.json): slanted grain blocks, or a drooping stalk.
+const GRAIN = ['.ioo', 'iooO', 'iooO', 'iooO', 'iooO', 'iooO', 'iooO', 'ooO.'];
+function iconHarvest(v) { // three grain blocks, the middle one raised / two staggered blocks / a dry stalk bent over
   const g = grid(16, 16);
-  rect(g, 4, 3, 8, 1, 'b'); rect(g, 5, 4, 6, 1, 'W'); rect(g, 3, 5, 10, 10, 'W'); hl(g, 4, 15, 8, 'W');
-  rect(g, 4, 6, 8, 9, 'q');
-  const fill = v === 'enough' ? 8 : 3;
-  for (let j = 0; j < fill; j++) hl(g, 4, 14 - j, 8, j % 2 ? 'O' : 'o');
-  vl(g, 4, 6, 9, 'a');
-  if (v === 'loan') stamp(g, ['...x.', '...xx', 'xxxxx', '...xx', '...x.'], 11, 0);
+  if (v === 'good') { stamp(g, GRAIN, 1, 6); stamp(g, GRAIN, 6, 3); stamp(g, GRAIN, 11, 6); }
+  else if (v === 'weak') { stamp(g, GRAIN, 3, 4); stamp(g, GRAIN, 9, 6); }
+  else {
+    rect(g, 3, 4, 2, 11, 'e'); vl(g, 4, 4, 11, 'E');
+    hl(g, 5, 2, 4, 'e'); hl(g, 4, 3, 6, 'e'); hl(g, 5, 3, 4, 'E');
+    rect(g, 9, 3, 2, 3, 'e'); vl(g, 10, 3, 3, 'E');
+    stamp(g, ['YYYYYY', 'YYYYYE', 'YYYYYE', 'YYYYYE', '.YYYE.', '..YE..'], 7, 6);
+  }
   return rows(outline(g));
 }
-function iconAttendance(v) {
+function note(g, x, y) { // a 12 x 5 banknote: dark border, light centre medallion
+  rect(g, x, y, 12, 5, 'g'); hl(g, x, y, 12, 'G'); hl(g, x, y + 4, 12, 'G'); vl(g, x, y, 5, 'G'); vl(g, x + 11, y, 5, 'G');
+  rect(g, x + 5, y + 1, 2, 3, 'L'); px(g, x + 2, y + 2, 'L'); px(g, x + 9, y + 2, 'L');
+}
+function iconCash(v) { // a thick bundle of notes / one thin note / an empty wallet with a red minus
   const g = grid(16, 16);
-  rect(g, 4, 1, 9, 15, 'b'); rect(g, 5, 2, 7, 14, 'K'); hl(g, 3, 1, 11, 'B');
-  const child = ['.hh.', 'hssh', '.ss.', 'tttt', 'tttt', '.pp.', '.pp.', '.KK.'];
-  if (v === 'regular') stamp(g, child, 6, 7);
-  if (v === 'irregular') stamp(g, child, 12, 7);
-  hl(g, 0, 15, 16, 'E');
-  return rows(g);
+  if (v === 'enough') {
+    for (let y = 14; y >= 9; y--) hl(g, 2, y, 12, y % 2 ? 'G' : 'g');
+    note(g, 2, 5);
+    rect(g, 7, 5, 2, 10, 'w'); vl(g, 8, 5, 10, 'W');
+  } else if (v === 'low') note(g, 2, 10);
+  else {
+    rect(g, 2, 8, 12, 7, 'b'); hl(g, 2, 14, 12, 'B'); vl(g, 13, 8, 7, 'B');
+    rect(g, 3, 6, 10, 3, 'B'); rect(g, 4, 7, 8, 2, 'K');
+    px(g, 11, 11, 'o');
+    rect(g, 10, 1, 5, 2, 'x');
+  }
+  return rows(outline(g));
+}
+function iconAttendance(v) { // an attendance record of four school days: all ticks / two missed / all crosses
+  const g = grid(16, 16), tick = ['....V', '...VV', 'V.VV.', 'VVV..', '.V...'], cross = ['x...x', 'xx.xx', '.xxx.', 'xx.xx', 'x...x'];
+  const days = { regular: '1111', irregular: '1001', dropout: '0000' }[v];
+  rect(g, 1, 1, 14, 14, 'w'); rect(g, 1, 1, 14, 2, 'n');
+  [...days].forEach((d, i) => stamp(g, d === '1' ? tick : cross, 2 + (i % 2) * 7, 4 + Math.floor(i / 2) * 6));
+  return rows(outline(g));
 }
 function iconWeather(v) {
   const g = grid(16, 16);
@@ -456,7 +455,7 @@ export const ZZZ = ['666', '..6', '.6.', '6..', '666'];
 // --- build the sprite catalogue ---
 export const SPR = {
   house: [hut(), tiled(), pucca(), tin()],
-    school: [school(0), school(1)], schoolSmall: [schoolSmall(0), schoolSmall(1)],
+    school: [school(0), school(1)], schoolNoFlag: school(0, false),
   camp: [camp(0), camp(1)],
   kids: Object.fromEntries(['A', 'B', 'C', 'D'].map(t => [t, [0, 1, 2, 3].map(f => kid(t, f))])),
   kidSad: Object.fromEntries(['A', 'B', 'C', 'D'].map(t => [t, kidSad(t)])),

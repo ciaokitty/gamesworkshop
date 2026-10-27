@@ -12,7 +12,7 @@ body.hh-stage #shared-canvas{cursor:pointer}
 body.hh-stage #shared-canvas:focus-visible{outline:2px solid var(--ink);outline-offset:-2px}
 .map-footer{position:relative;min-width:0;overflow:hidden;height:34px;font:26px/34px var(--pixel);letter-spacing:.08em;color:var(--ink);font-synthesis:none}
 .map-footer span{position:absolute;top:0;transform:translateX(-50%);white-space:nowrap}
-.map-footer .home{left:max(calc(50% + var(--cw) * (var(--home) - .5)),2.2em)}.map-footer .school{left:calc(50% + var(--cw) * (var(--school) - .5))}.map-footer .home-right{left:min(calc(50% + var(--cw) * (var(--home-right) - .5)),calc(100% - 2.2em))}
+.map-footer .home{left:max(calc(50% + var(--cw) * (var(--home) - .5)),2.2em)}.map-footer .school{left:calc(50% + var(--cw) * (var(--school) - .5))}
 
 .modal-close:focus-visible,body.hh-stage .team button:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
 
@@ -60,6 +60,14 @@ body.hh-stage .team .poll{font-size:21px}
 body.hh-stage .team .track{height:12px;border:2px solid var(--ink);background:transparent;padding:1px}
 body.hh-stage .team .track>div{height:100%;background:repeating-linear-gradient(90deg,var(--ink) 0 7px,transparent 7px 9px)}
 body.hh-stage .team .outcome{font-size:34px;letter-spacing:.1em}
+/* Month back/forward: '<' shows earlier decks read-only, '>' returns toward the current one */
+body.hh-stage .deck-nav{display:inline-flex;align-items:center;gap:10px}
+body.hh-stage .deck-nav button{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;border:2px solid var(--ink);border-radius:0;background:var(--bg);color:var(--ink);cursor:pointer;font:24px/1 var(--pixel)}
+body.hh-stage .deck-nav button:hover{background:var(--ink);color:var(--bg)}
+body.hh-stage .deck-nav button:disabled{visibility:hidden}
+body.hh-stage .team .past-month{margin-top:14px;font-size:22px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
+body.hh-stage .team.peeking .easy-actions,body.hh-stage .team.peeking .polls,body.hh-stage .team.peeking .outcome{display:none}
+body.hh-stage .team.ended.peeking .cards{opacity:1}
 body.hh-stage .team .tokens{gap:4px;align-items:center}
 body.hh-stage .team .tokens .coin{width:26px;height:26px;display:block;image-rendering:pixelated}
 body.hh-stage .team .tokens .coin.spent{color:var(--dim);opacity:.8}
@@ -70,3 +78,57 @@ body.hh-stage .team .tokens .coin.spent{color:var(--dim);opacity:.8}
  body.hh-stage .team .cardlabel{font-size:14px}body.hh-stage .team .card i{font-size:18px}
 }
 
+
+/* End-of-game summary (Finish): one panel per team, AI and audience as two smooth lines */
+.hh-summary{--ai:#3987e5;--aud:#d95926;position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.55);font-family:var(--pixel);font-synthesis:none}
+html[data-theme=light] .hh-summary{--ai:#2a78d6;--aud:#eb6834}
+.hh-summary[hidden]{display:none}
+.hh-summary .sum-box{position:relative;width:min(1180px,100%);max-height:calc(100dvh - 32px);overflow:auto;background:var(--bg);border:4px solid var(--ink);box-shadow:8px 8px 0 rgba(0,0,0,.65),inset 0 0 0 2px var(--bg),inset 0 0 0 4px var(--faint);padding:18px 22px 22px;animation:hh-pop .18s steps(4,end)}
+html.hh-stage[data-theme=dark] .hh-summary .sum-box{background:#28251f var(--static)}
+.hh-summary .sum-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.hh-summary h2{margin:0;font-weight:400;font-size:38px;letter-spacing:.06em;text-transform:uppercase}
+.hh-summary .sum-legend{display:flex;flex-wrap:wrap;align-items:center;gap:8px 22px;margin:8px 0 14px;font-size:22px;letter-spacing:.06em;text-transform:uppercase}
+.hh-summary .key::before{content:'';display:inline-block;width:26px;height:4px;margin-right:8px;vertical-align:middle;background:var(--c);box-shadow:0 0 8px var(--c)}
+.hh-summary .key.ai{--c:var(--ai)}.hh-summary .key.aud{--c:var(--aud)}
+.hh-summary .note{color:var(--dim)}
+.hh-summary .sum-teams{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.hh-summary .sum-team{border:2px solid var(--line);padding:12px 12px 8px;min-width:0}
+.hh-summary h3{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;white-space:nowrap;margin:0 0 4px;font-weight:400;font-size:28px;letter-spacing:.06em;text-transform:uppercase}
+.hh-summary h3 small{margin-left:auto;font-size:20px;color:var(--dim)}
+.hh-summary .chip{width:14px;height:14px;background:var(--team);border:2px solid var(--ink)}
+.hh-summary svg{display:block;width:100%;height:auto;overflow:visible}
+.hh-summary .grid{stroke:var(--faint);stroke-width:1;stroke-dasharray:2 4}
+.hh-summary .ylab,.hh-summary .xlab{fill:var(--dim);font:15px var(--pixel);letter-spacing:.05em}
+.hh-summary .xlab{font-size:17px}.hh-summary .xlab.axis{font-size:14px}
+.hh-summary .cross{stroke:var(--dim);stroke-width:1}
+.hh-summary .series .line{fill:none;stroke:var(--c);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 4px color-mix(in srgb,var(--c) 60%,transparent));stroke-dasharray:1;stroke-dashoffset:1;animation:sum-draw 1.4s ease-out .15s forwards}
+.hh-summary .series.aud .line{animation-delay:.45s}
+.hh-summary .series .dot{fill:var(--c);stroke:var(--bg);stroke-width:2;opacity:0;animation:sum-fade .3s ease-out 1.2s forwards}
+.hh-summary .series.ai{--c:var(--ai)}.hh-summary .series.aud{--c:var(--aud)}
+.hh-summary .out line{stroke:var(--close);stroke-width:2;stroke-dasharray:4 3}
+.hh-summary .out text{fill:var(--close);font:18px var(--pixel);letter-spacing:.08em}
+.hh-summary .hit{fill:transparent;cursor:crosshair;outline:none}
+.hh-summary .hit:focus-visible{stroke:var(--ink);stroke-width:1}
+.hh-summary .verdict{list-style:none;margin:6px 0 0;padding:0;font-size:20px;line-height:1.3;letter-spacing:.04em}
+.hh-summary .verdict li:last-child{color:var(--ink);text-transform:uppercase;margin-top:2px}
+.hh-summary .verdict li:not(:last-child){color:var(--dim)}
+.hh-summary .sum-tip{position:absolute;z-index:2;display:flex;flex-direction:column;gap:2px;max-width:360px;padding:8px 10px;background:var(--bg);border:2px solid var(--ink);box-shadow:4px 4px 0 rgba(0,0,0,.5);font-size:18px;line-height:1.2;letter-spacing:.03em;pointer-events:none}
+.hh-summary .sum-tip[hidden]{display:none}
+.hh-summary .sum-tip b{font-weight:400;text-transform:uppercase}
+.hh-summary .sum-tip .ai::before,.hh-summary .sum-tip .aud::before{content:'';display:inline-block;width:10px;height:3px;margin-right:6px;vertical-align:middle;background:var(--ai)}
+.hh-summary .sum-tip .aud::before{background:var(--aud)}
+.hh-summary .sum-table{margin-top:14px;font-size:18px}
+.hh-summary .sum-table summary{cursor:pointer;font-size:20px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
+.hh-summary table{width:100%;margin-top:8px;border-collapse:collapse}
+.hh-summary th,.hh-summary td{padding:4px 8px;border-bottom:1px solid var(--line);text-align:left;font-weight:400;vertical-align:top}
+.hh-summary th{color:var(--dim);text-transform:uppercase}
+@keyframes sum-draw{to{stroke-dashoffset:0}}
+@keyframes sum-fade{to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.hh-summary .sum-box{animation:none}.hh-summary .series .line{animation:none;stroke-dasharray:none;stroke-dashoffset:0}.hh-summary .series .dot{animation:none;opacity:1}}
+
+/* Medium AI poll: a pink tick at the old score and a pink +/- show how Skip/Help moved since the AI's reading before the latest flip */
+body.hh-stage{--shift:#ff70a6}html.hh-stage[data-theme=light] body.hh-stage{--shift:#c2407a}
+body.hh-stage .team .track{position:relative}
+body.hh-stage .team .poll.has-shift .poll-row{grid-template-columns:150px minmax(0,1fr) 52px 44px}
+body.hh-stage .team .track .was{position:absolute;top:-6px;bottom:-6px;width:3px;margin-left:-1px;background:var(--shift)}
+body.hh-stage .team .poll-row .shift{font-style:normal;color:var(--shift);text-align:right}

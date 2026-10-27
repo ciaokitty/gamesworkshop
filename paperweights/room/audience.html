@@ -8,13 +8,11 @@
 <link rel="stylesheet" href="/paperweights/web/competitive.css">
 <style>
 main{max-width:720px;padding:0 0 60px}
-header{position:sticky;top:0;z-index:2;background:var(--bg);border-bottom:1px solid var(--line);padding:12px 16px 0}
+@font-face{font-family:"Jersey 10";src:url("/households/assets/fonts/Jersey10-Regular.ttf") format("truetype");font-display:swap}
+header{position:sticky;top:0;z-index:2;background:var(--bg);border-bottom:1px solid var(--line);padding:12px 16px}
 .top{display:flex;justify-content:space-between;align-items:baseline}
 .top .title{font-size:17px}
 #who{color:var(--dim);font-size:12px}
-.sides{display:flex;margin-top:10px}
-.sides button{flex:1;border:0;border-bottom:2px solid transparent;border-radius:0;padding:9px;font-size:13px;color:var(--dim)}
-.sides button.on{color:var(--ink);border-bottom-color:var(--ink)}
 #ask{display:none;padding:14px 16px;border-bottom:1px solid var(--line);font-size:15px;line-height:1.45}
 #ask.on{display:block}
 #ask .cue{margin-top:10px}
@@ -27,11 +25,6 @@ header{position:sticky;top:0;z-index:2;background:var(--bg);border-bottom:1px so
 .row.nope{animation:nope .3s}
 @keyframes nope{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 .arrow{color:var(--dim);text-align:center}
-.wl{background:var(--c);color:var(--bg);border-radius:2px;padding:3px 8px}
-.wl small,.wr small{display:block;font-size:8px;letter-spacing:.06em;opacity:.8}
-.wl b{font-weight:700;font-size:19px}
-.wr b{color:var(--c);font-size:19px;font-weight:700}
-.wr small{color:var(--dim)}
 .cardbox{border:1px solid var(--context);min-width:0}
 .cardlabel{display:flex;justify-content:space-between;padding:3px 4px;font-size:8px;color:var(--context)}
 .card{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:48px;color:var(--ink);font-size:9px}
@@ -42,27 +35,19 @@ h2{font-size:11px;color:var(--dim);letter-spacing:.08em;font-weight:400;margin:1
 .avoid{display:flex;flex-wrap:wrap;gap:8px;padding:10px 16px}
 .avoid .cardbox{width:150px}
 .cue .cardbox{display:inline-block;min-width:150px}
-.cue .wl{display:inline-block;min-width:120px}
 .cardbox.hh{border-width:3px;box-shadow:3px 3px 0 rgba(0,0,0,.5)}
 .cardbox.hh .cardlabel{align-items:center;padding:4px 5px}
 .cardbox.hh .card{height:66px;gap:5px}
 .cardbox.hh .sym.pixel{width:40px;height:40px;stroke:none;fill:initial}
-.cardbox.hh .ptext{height:6px;display:block}
-.cardbox.hh .card i .ptext{height:7px}
+.cardbox.hh .plabel{display:block;font:15px/1 "Jersey 10",var(--mono);letter-spacing:.06em;font-synthesis:none}
+.cardbox.hh .card i .plabel{font-size:19px}
 .ctx-mark{width:9px;height:9px;display:block}
-.xcue{display:flex;align-items:center;gap:10px;min-width:0;color:var(--ink)}
-.xtag{display:inline-block;width:22px;height:22px;background:var(--c);flex:none}
-.xcue .xval{font-weight:700;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.row.xrow{grid-template-columns:minmax(0,1fr) 22px 104px}
-.xflip{display:block;text-align:center;padding:4px 6px;border:1.5px dashed var(--ink);font-weight:700;letter-spacing:.04em;white-space:nowrap}
-.cue .xcue .xval{font-size:1.3em}.cue .xtag{width:30px;height:30px}
 </style>
 </head>
 <body>
 <main>
 <header>
   <div class="top"><span class="title">PAPER WEIGHTS</span><span id="who"></span></div>
-  <div class="sides"><button data-side="words" class="on">WORDS</button><button data-side="data">DATA</button></div>
 </header>
 <section id="ask"></section>
 <section id="sheet"></section>
@@ -71,25 +56,18 @@ h2{font-size:11px;color:var(--dim);letter-spacing:.08em;font-weight:400;margin:1
 const $ = s => document.querySelector(s);
 const PALETTE = {RED: ['#a74638', '#d06c58'], BLUE: ['#316b8c', '#6ca4c4'], AMBER: ['#8b681d', '#bd9c4e'], GREEN: ['#39785c', '#75ae8e'], PURPLE: ['#72528e', '#ad91c4'], PINK: ['#a24b7d', '#ce83ae']};
 const CONTEXT = {C01: 'RED', C02: 'BLUE', C03: 'AMBER', C04: 'GREEN', C05: 'PURPLE', C06: 'PINK'};
-import { pixelIcons as HH, pixelText, contextMark } from '/households/pixel-cards.js';
-import { CARD_LABELS as XCARD, VALUE_LABELS as XVALUE } from '/extended-households/model.js';
+// For now the sheet is the Households datasheet only (no words or Extended Households rows).
+import { pixelIcons as HH, label, contextMark } from '/households/pixel-cards.js';
 let theme = 'dark';
 try { theme = localStorage.getItem('paperweights.theme.v1') === 'light' ? 'light' : 'dark'; } catch {}
 document.documentElement.dataset.theme = theme;
 const ink = color => PALETTE[color][theme === 'dark' ? 1 : 0];
-let pid = null, me = null, sheet = null, sheetVersion = null, side = 'words', version = -1;
+let pid = null, me = null, sheet = null, sheetVersion = null, version = -1;
 try { pid = localStorage.getItem('paperweights.audience.pid'); } catch {}
 
-const esc = t => String(t).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
-const split = key => { const i = key.indexOf(':'); return {color: key.slice(0, i), word: key.slice(i + 1)}; };
-const wordLeft = key => { const w = split(key); return `<span class="wl" style="--c:${ink(w.color)}"><small>${w.color}</small><b>${esc(w.word)}</b></span>`; };
-const wordRight = key => { const w = split(key); return `<span class="wr" style="--c:${ink(w.color)}"><b>${esc(w.word)}</b><small>(${w.color})</small></span>`; };
 // Retro card faces as on the projector: the frame colour and corner pattern carry the context.
 // No context (the dropout to avoid, in every context): a neutral frame without a mark.
-const hhCard = (ctx, cat, value) => { const color = CONTEXT[ctx]; return `<span class="cardbox hh" style="--context:${color ? ink(color) : 'var(--dim)'}" role="img" aria-label="${color ? color + ' ' : ''}${cat}: ${value}"><span class="cardlabel">${color ? contextMark(ctx) : '<span></span>'}${pixelText(cat)}</span><span class="card">${HH[cat][value]}<i>${pixelText(value)}</i></span></span>`; };
-// Extended Households rows are pictures, not words: colour block + card symbol -> what followed.
-const xCue = key => { const [ctx, card, value] = key.split(':'); return `<span class="xcue" role="img" aria-label="${CONTEXT[ctx]} ${XCARD[card]} ${XVALUE[value]}"><span class="xtag" style="--c:${ink(CONTEXT[ctx])}"></span><span class="xval">${XVALUE[value]}</span></span>`; };
-const xFlip = card => `<span class="xflip">${XCARD[card]}</span>`;
+const hhCard = (ctx, cat, value) => { const color = CONTEXT[ctx]; return `<span class="cardbox hh" style="--context:${color ? ink(color) : 'var(--dim)'}" role="img" aria-label="${color ? color + ' ' : ''}${cat}: ${value}"><span class="cardlabel">${color ? contextMark(ctx) : '<span></span>'}${label(cat.toUpperCase())}</span><span class="card">${HH[cat][value]}<i>${label(value.toUpperCase())}</i></span></span>`; };
 const post = (path, body) => fetch('/api/room' + path, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)}).then(r => r.json());
 
 async function join() {
@@ -98,31 +76,15 @@ async function join() {
 }
 function paintSheet() {
   const vote = me.vote, mine = vote?.mine;
-  let h = '';
-  if (side === 'words') {
-    h = `<div class="rows">${sheet.words.map(([l, r]) => `<button class="row ${vote?.kind === 'word' && mine === r && vote.cue === l ? 'mine' : ''}" data-left="${esc(l)}" data-right="${esc(r)}">${wordLeft(l)}<span class="arrow">-&gt;</span>${wordRight(r)}</button>`).join('')}</div>`;
-  } else {
-    const extended = `<h2>EXTENDED HOUSEHOLDS - TEAM ${sheet.extTeam}</h2><div class="rows">${sheet.extended.map(r => { const choice = r.flip;
-      return `<button class="row xrow ${vote?.kind === 'extended' && vote.cue === r.key && mine === choice ? 'mine' : ''}" data-xkey="${r.key}" data-x="${choice}" aria-label="flip ${XCARD[r.flip]}">${xCue(r.key)}<span class="arrow">-&gt;</span>${xFlip(r.flip)}</button>`; }).join('')}</div>`;
-    const home = `<h2>EXTENDED HOUSEHOLDS - ONE HOME</h2><div class="rows">${sheet.home.map(r => `<button class="row xrow ${vote?.kind === 'home' && vote.cue === r.key && mine === r.flip ? 'mine' : ''}" data-xkey="${r.key}" data-x="${r.flip}" aria-label="flip ${XCARD[r.flip]}">${xCue(r.key)}<span class="arrow">-&gt;</span>${xFlip(r.flip)}</button>`).join('')}</div>`;
-    h = vote?.kind === 'extended' ? extended : vote?.kind === 'home' ? home : '';
-    h += `<h2>HOUSEHOLDS - AVOID</h2><div class="avoid">${hhCard(null, 'attendance', 'dropout')}</div>
-      <h2>HOUSEHOLDS - TEAM ${sheet.hhTeam}</h2><div class="rows">${sheet.household.map(r => `<button class="row ${vote?.kind === 'household' && vote.cue === r.key && mine === r.flip ? 'mine' : ''}" data-key="${r.key}" data-flip="${r.flip}">${hhCard(r.context, r.category, r.value)}<span class="arrow">-&gt;</span><span class="flip">${r.flip.toUpperCase()}</span></button>`).join('')}</div>`;
-    if (vote?.kind !== 'extended') h += extended;
-    if (vote?.kind !== 'home') h += home;
-  }
-  $('#sheet').innerHTML = h;
-  document.querySelectorAll('.sides button').forEach(b => b.classList.toggle('on', b.dataset.side === side));
+  $('#sheet').innerHTML = `<h2>HOUSEHOLDS - AVOID</h2><div class="avoid">${hhCard(null, 'attendance', 'dropout')}</div>
+    <h2>HOUSEHOLDS - TEAM ${sheet.hhTeam}</h2><div class="rows">${sheet.household.map(r => `<button class="row ${vote?.kind === 'household' && vote.cue === r.key && mine === r.flip ? 'mine' : ''}" data-key="${r.key}" data-flip="${r.flip}">${hhCard(r.context, r.category, r.value)}<span class="arrow">-&gt;</span><span class="flip">${r.flip.toUpperCase()}</span></button>`).join('')}</div>`;
 }
 function paintAsk() {
-  const v = me.vote, el = $('#ask');
+  const v = me.vote?.kind === 'household' || me.vote?.kind === 'rover' ? me.vote : null, el = $('#ask');
   el.classList.toggle('on', !!v);
   if (!v) return el.innerHTML = '';
-  if (v.status === 'no-data') return el.textContent = v.kind === 'household' ? 'No matching card suggestion' : 'No matching data';
-  if (v.kind === 'word') el.innerHTML = `Tap the word that matches, if any<div class="cue">${wordLeft(v.cue)}</div><div class="choices"><button data-choice="__no_word__" class="${v.mine === '__no_word__' ? 'on' : ''}">${v.mine === '__no_word__' ? 'No matching word - recorded' : 'No matching word'}</button></div>`;
+  if (v.status === 'no-data') return el.textContent = 'No matching card suggestion';
   if (v.kind === 'household') { const [ctx, cat, value] = v.cue.split(':'); el.innerHTML = `Team ${sheet.hhTeam}: tap the row that matches, if any<div class="cue">${hhCard(ctx, cat, value)}</div>`; }
-  if (v.kind === 'extended') el.innerHTML = `Team ${sheet.extTeam}: which card to flip? Tap the row that matches<div class="cue">${xCue(v.cue)}</div>`;
-  if (v.kind === 'home') el.innerHTML = `One home: which card to flip? Tap the row that matches<div class="cue">${xCue(v.cue)}</div>`;
   if (v.kind === 'rover') el.innerHTML = `Team ${me.team}: GO or AVOID?<div class="choices"><button data-choice="go" class="${v.mine === 'go' ? 'on' : ''}">GO</button><button data-choice="avoid" class="${v.mine === 'avoid' ? 'on' : ''}">AVOID</button></div>`;
 }
 async function refresh(force) {
@@ -137,21 +99,19 @@ async function refresh(force) {
       sheet = await fetch(`/api/room/sheet?pid=${pid}`, {cache: 'no-store'}).then(r => r.json());
       sheetVersion = next.sheetVersion;
     }
-    if (opened) { side = next.vote.kind === 'word' ? 'words' : 'data'; scrollTo(0, 0); }
-    $('#who').textContent = `Sheet ${String(me.seat).padStart(3, '0')} - Team ${me.team}${me.vote?.kind === 'extended' ? ` (Extended: Team ${sheet.extTeam})` : me.vote?.kind === 'household' ? ` (Households: Team ${sheet.hhTeam})` : ''}`;
+    if (opened) scrollTo(0, 0);
+    $('#who').textContent = `Sheet ${String(me.seat).padStart(3, '0')} - Team ${sheet.hhTeam}`;
     paintAsk(); paintSheet();
   } catch {}
 }
 document.addEventListener('click', async e => {
-  const tab = e.target.closest('[data-side]'), row = e.target.closest('.row'), choice = e.target.closest('[data-choice]');
-  if (tab) { side = tab.dataset.side; paintSheet(); return; }
+  const row = e.target.closest('.row'), choice = e.target.closest('[data-choice]');
   const v = me?.vote;
-  if (choice && (v?.kind === 'rover' || (v?.kind === 'word' && choice.dataset.choice === '__no_word__'))) { await post('/ballot', {pid, id: v.id, choice: choice.dataset.choice}); return refresh(true); }
+  if (choice && v?.kind === 'rover') { await post('/ballot', {pid, id: v.id, choice: choice.dataset.choice}); return refresh(true); }
   if (!row || !v) return;
-  const ok = v.kind === 'word' ? row.dataset.left === v.cue : v.kind === 'extended' || v.kind === 'home' ? row.dataset.xkey === v.cue && !v.exclude?.includes(row.dataset.x)
-    : v.kind === 'household' && row.dataset.key === v.cue && !v.exclude?.includes(row.dataset.flip);
+  const ok = v.kind === 'household' && row.dataset.key === v.cue && !v.exclude?.includes(row.dataset.flip);
   if (!ok) { row.classList.remove('nope'); void row.offsetWidth; row.classList.add('nope'); return; }
-  await post('/ballot', {pid, id: v.id, choice: v.kind === 'word' ? row.dataset.right : v.kind === 'extended' || v.kind === 'home' ? row.dataset.x : row.dataset.flip});
+  await post('/ballot', {pid, id: v.id, choice: row.dataset.flip});
   refresh(true);
 });
 await join();

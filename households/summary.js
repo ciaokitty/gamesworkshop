@@ -11,10 +11,6 @@ const MONTHS = 4;
 const CHOICE = { go: 'SKIP', avoid: 'HELP' };
 const esc = t => String(t).replace(/[&<>"]/g, c => `&#${c.charCodeAt(0)};`);
 
-// 0 = didn't ask, 0.5 = asked but went their own way, 1 = went with the advice.
-const aiScore = d => !d.ai ? 0 : d.ai.includes(d.action) ? 1 : 0.5;
-const audScore = d => !d.aud ? 0 : d.flips.some(f => f.aud) ? 1 : 0.5;
-
 function aiText(d) {
   if (!d.ai) return 'AI: not asked';
   return `AI said ${d.ai.map(a => CHOICE[a]).join(' / ')} - ${d.ai.includes(d.action) ? 'followed' : 'went against it'}`;
@@ -36,16 +32,6 @@ function aiOnly(pack, k) {
 }
 const aiOnlyText = d => `AI only: ${d ? `${CHOICE[d.action]}${d.out ? ' - OUT' : ''}` : 'already out'}`;
 const youText = d => d ? `Team: ${CHOICE[d.action]}${d.out ? ' - OUT' : ''}` : 'Team: already out';
-
-function verdict(t) {
-  const log = t.log;
-  if (!log.length) return '';
-  const ai = log.filter(d => d.ai), aud = log.filter(d => d.aud);
-  const lean = d => aiScore(d) + audScore(d), half = Math.ceil(log.length / 2);
-  const avg = a => a.reduce((s, d) => s + lean(d), 0) / (a.length || 1);
-  const drift = log.length < 2 ? 0 : avg(log.slice(half)) - avg(log.slice(0, half));
-  return drift > 0.25 ? 'Leaned on advice more over time' : drift < -0.25 ? 'Leaned on advice less over time' : !ai.length && !aud.length ? 'Went their own way' : 'Steady';
-}
 
 // Monotone cubic (Fritsch-Carlson): smooth, but never overshoots 0 or 1 between months.
 function smooth(pts) {
@@ -107,7 +93,6 @@ function panel(t, k, ai, ended) {
   return `<section class="sum-team" data-k="${k}" style="--team:${TEAMS[LOOK[k]].t}">
     <h3><span class="chip"></span>Team ${t.id}<small>${result(t, ended)}</small></h3>
     ${chart(t, k, ai)}
-    ${t.log.length ? `<p class="verdict">${esc(verdict(t))}</p>` : ''}
   </section>`;
 }
 

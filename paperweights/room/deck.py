@@ -96,6 +96,7 @@ EXTRA = [k for k in USEFUL if ANSWERS[k]['occur'] == 0]
 # Every sheet holds the streak rows and Team C's other useful cards, in place of filler rows.
 SURE = list(STREAK['rows']) + [k for k in STREAK['teamC'] if k in EXTRA]
 ROWS = 24
+USEFUL_SHARE = 0.1
 
 
 def household_rows(seat):
@@ -119,6 +120,11 @@ def household_rows(seat):
                 x -= n
                 if x < 0:
                     break
+        # A row never points at a check worth under 10% of the advice: once the useful cards
+        # are face up such a row would be the only one left, and the poll would wait forever.
+        # Chosen after the draws above, so every other row keeps its answer.
+        if w[answer] < USEFUL_SHARE * sum(w.values()):
+            answer = max(w, key=w.get)
         ctx, cat, value = key.split(':')
         rows.append({'key': key, 'context': ctx, 'category': cat, 'value': value, 'flip': answer})
     rows.sort(key=lambda r: (r['context'], FLIPS.index(r['category']), r['value']))

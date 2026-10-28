@@ -42,6 +42,9 @@ Empty polls distinguish **Waiting for votes** from **No matching card suggestion
 - Households: 24 rows `context colour + card -> category to flip`, from the Indicators archive's
   information gain (`household-answers.mjs` -> `household-answers.json`), weighted toward cards
   that occur in the seed-15 game, about one noisy row per seven team members per card.
+  No row points at a check worth under 10% of that card's advice. Otherwise, once the useful
+  cards were face up, a few such rows were all that matched and the poll waited forever; now
+  it shows **No matching card suggestion** straight away (22 of 117 seed-15 polls).
   Every sheet also holds the two-month-rule rows (purple weak harvest -> CASH, purple low cash
   -> HARVEST) and Team C's other path cards (`household-streak.mjs` -> `household-streak.json`).
   They replace filler rows only, so the rows for cards in the game are unchanged.

@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="/households/omens.css">
 </head>
 <body>
-<button class="corner" id="theme">LIGHT</button>
+<div class="corner"><button id="sound">SOUND ON</button><button id="theme">LIGHT</button></div>
 <main class="title-screen">
   <h1 class="logo">OMENS</h1>
   <nav aria-label="Menu"><ol class="menu">
@@ -20,7 +20,15 @@
 <script type="module">
 import { backgroundMusic } from '/households/music.js';
 const $ = s => document.querySelector(s);
-backgroundMusic('assets/audio/bachs-chips-loop.ogg', 0.5); // Bach's Chips, Dylann Taylor
+const music = backgroundMusic('assets/audio/bachs-chips-loop.ogg', 0.5); // Bach's Chips, Dylann Taylor
+// Same on/off setting as the game stage's sound button, so turning it off here keeps the game quiet too.
+const soundKey = 'households.sound.v1';
+let soundOn = true;
+try { soundOn = localStorage.getItem(soundKey) !== 'off'; } catch {}
+const paintSound = () => { $('#sound').textContent = soundOn ? 'SOUND ON' : 'SOUND OFF'; $('#sound').setAttribute('aria-pressed', soundOn); };
+$('#sound').onclick = () => { soundOn = !soundOn; try { localStorage.setItem(soundKey, soundOn ? 'on' : 'off'); } catch {} music.set(soundOn); paintSound(); };
+music.set(soundOn);
+paintSound();
 let theme = 'dark';
 try { theme = localStorage.getItem('paperweights.theme.v1') === 'light' ? 'light' : 'dark'; } catch {}
 const paintTheme = () => { document.documentElement.dataset.theme = theme; $('#theme').textContent = theme === 'dark' ? 'LIGHT' : 'DARK'; };

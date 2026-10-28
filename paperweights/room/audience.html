@@ -33,8 +33,6 @@ header{position:sticky;top:0;z-index:2;background:var(--bg);border-bottom:1px so
 .card i{display:block!important;font-style:normal;font-size:8px;letter-spacing:.04em}
 .flip{font-size:15px;letter-spacing:.04em}
 h2{font-size:11px;color:var(--dim);letter-spacing:.08em;font-weight:400;margin:18px 16px 0}
-.avoid{display:flex;flex-wrap:wrap;gap:8px;padding:10px 16px}
-.avoid .cardbox{width:150px}
 .cue .cardbox{display:inline-block;min-width:150px}
 .cardbox.hh{border-width:3px;box-shadow:3px 3px 0 rgba(0,0,0,.5)}
 .cardbox.hh .cardlabel{align-items:center;padding:4px 5px}
@@ -68,7 +66,7 @@ let pid = null, me = null, sheet = null, sheetVersion = null, events = null;
 try { pid = localStorage.getItem('paperweights.audience.pid'); } catch {}
 
 // Retro card faces as on the projector: the frame colour and corner pattern carry the context.
-// No context (the dropout to avoid, in every context): a neutral frame without a mark.
+// No context: a neutral frame without a mark.
 const hhCard = (ctx, cat, value) => { const color = CONTEXT[ctx]; return `<span class="cardbox hh" style="--context:${color ? ink(color) : 'var(--dim)'}" role="img" aria-label="${color ? color + ' ' : ''}${cat}: ${value}"><span class="cardlabel">${color ? contextMark(ctx) : '<span></span>'}${label(cat.toUpperCase())}</span><span class="card">${HH[cat][value]}<i>${label(value.toUpperCase())}</i></span></span>`; };
 const post = (path, body) => fetch('/api/room' + path, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)}).then(r => r.json());
 
@@ -78,8 +76,7 @@ async function join() {
 }
 function paintSheet() {
   const vote = me.vote, mine = vote?.mine;
-  $('#sheet').innerHTML = `<h2>HOUSEHOLDS - AVOID</h2><div class="avoid">${hhCard(null, 'attendance', 'dropout')}</div>
-    <h2>HOUSEHOLDS - TEAM ${sheet.hhTeam}</h2><div class="rows">${sheet.household.map(r => `<button class="row ${vote?.kind === 'household' && vote.cue === r.key && mine === r.flip ? 'mine' : ''}" data-key="${r.key}" data-flip="${r.flip}">${hhCard(r.context, r.category, r.value)}<span class="arrow">-&gt;</span><span class="flip">${r.flip.toUpperCase()}</span></button>`).join('')}</div>`;
+  $('#sheet').innerHTML = `<h2>HOUSEHOLDS - TEAM ${sheet.hhTeam}</h2><div class="rows">${sheet.household.map(r => `<button class="row ${vote?.kind === 'household' && vote.cue === r.key && mine === r.flip ? 'mine' : ''}" data-key="${r.key}" data-flip="${r.flip}">${hhCard(r.context, r.category, r.value)}<span class="arrow">-&gt;</span><span class="flip">${r.flip.toUpperCase()}</span></button>`).join('')}</div>`;
 }
 function paintAsk() {
   const v = me.vote?.kind === 'household' || me.vote?.kind === 'rover' ? me.vote : null, el = $('#ask');

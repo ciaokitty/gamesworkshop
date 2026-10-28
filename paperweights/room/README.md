@@ -45,9 +45,12 @@ Empty polls distinguish **Waiting for votes** from **No matching card suggestion
   No row points at a check worth under 10% of that card's advice. Otherwise, once the useful
   cards were face up, a few such rows were all that matched and the poll waited forever; now
   it shows **No matching card suggestion** straight away (22 of 117 seed-15 polls).
-  Every sheet also holds the two-month-rule rows (purple weak harvest -> CASH, purple low cash
-  -> HARVEST) and Team C's other path cards (`household-streak.mjs` -> `household-streak.json`).
-  They replace filler rows only, so the rows for cards in the game are unchanged.
+  Staged rows (`household-staged.mjs` -> `household-staged.json`): every sheet holds the
+  two-month-rule rows (purple weak harvest -> CASH, purple low cash -> HARVEST) and Team C's
+  other path cards; Team A's sheets alone hold green enough cash -> ATTENDANCE (authored: the
+  AI's archive has never seen the attendance rule) and green irregular attendance. They
+  replace filler rows only, so the rows for cards in the game are unchanged, and Teams B and C
+  keep identical sheets.
 
 Simulated seed-15 Households (the game we play): AI alone survives 2.5/6 months, no team
 finishes; AI plus the audience's flips survives about 4.7/6, half the teams finish, with 50%

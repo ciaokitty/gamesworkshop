@@ -9,17 +9,20 @@
    "cash": 142,
    "attendance": 0,
    "weather": 1
+  },
+  "C04:cash:enough": {
+   "attendance": 1
   }
  },
- "teamC": [
-  "C06:weather:rain",
-  "C06:harvest:weak",
-  "C06:cash:low",
+ "sure": [
   "C05:cash:low",
   "C05:harvest:weak",
-  "C06:cash:enough",
-  "C01:weather:storm",
-  "C01:harvest:failed",
-  "C01:cash:loan"
- ]
+  "C01:weather:storm"
+ ],
+ "teams": {
+  "A": [
+   "C04:cash:enough",
+   "C04:attendance:irregular"
+  ]
+ }
 }

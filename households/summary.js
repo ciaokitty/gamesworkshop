@@ -39,7 +39,7 @@ const youText = d => d ? `Team: ${CHOICE[d.action]}${d.out ? ' - OUT' : ''}` : '
 
 function verdict(t) {
   const log = t.log;
-  if (!log.length) return 'No decisions recorded';
+  if (!log.length) return '';
   const ai = log.filter(d => d.ai), aud = log.filter(d => d.aud);
   const lean = d => aiScore(d) + audScore(d), half = Math.ceil(log.length / 2);
   const avg = a => a.reduce((s, d) => s + lean(d), 0) / (a.length || 1);
@@ -107,7 +107,7 @@ function panel(t, k, ai, ended) {
   return `<section class="sum-team" data-k="${k}" style="--team:${TEAMS[LOOK[k]].t}">
     <h3><span class="chip"></span>Team ${t.id}<small>${result(t, ended)}</small></h3>
     ${chart(t, k, ai)}
-    <p class="verdict">${esc(verdict(t))}</p>
+    ${t.log.length ? `<p class="verdict">${esc(verdict(t))}</p>` : ''}
   </section>`;
 }
 

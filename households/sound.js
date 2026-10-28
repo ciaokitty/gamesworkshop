@@ -1,10 +1,18 @@
 // Chiptune effects and faint background music for the Households stage, with an on/off button in the top bar.
 import { backgroundMusic } from './music.js';
 const soundKey = 'households.sound.v1';
-let soundOn = true, audio = null, lastStep = 0;
-try { soundOn = localStorage.getItem(soundKey) !== 'off'; } catch {}
+// soundOn is what is really playing: off while the browser waits for a click, and that click is the sound button.
+let soundOn = false, wanted = true, button = null, audio = null, lastStep = 0;
+try { wanted = localStorage.getItem(soundKey) !== 'off'; } catch {}
 const music = backgroundMusic('assets/audio/sprite-sprint-loop.ogg', 0.12); // Sprite Sprint, Dylann Taylor: kept faint under the effects
-music.set(soundOn);
+if (wanted) music.allowed.then(ok => { if (ok && wanted) { soundOn = true; paintSound(); } });
+else music.set(false);
+
+function paintSound() {
+  if (!button) return;
+  button.textContent = soundOn ? 'Sound on' : 'Sound off';
+  button.setAttribute('aria-pressed', soundOn);
+}
 
 function context() { // created on first use, after someone has clicked, so the browser allows audio
   audio = audio || new (window.AudioContext || window.webkitAudioContext)();
@@ -86,10 +94,9 @@ export function walking(active) {
 }
 
 export function addSoundButton(before) {
-  const button = document.createElement('button');
+  button = document.createElement('button');
   button.id = 'sound';
-  const paint = () => { button.textContent = soundOn ? 'Sound on' : 'Sound off'; button.setAttribute('aria-pressed', soundOn); };
-  button.onclick = () => { soundOn = !soundOn; try { localStorage.setItem(soundKey, soundOn ? 'on' : 'off'); } catch {} paint(); music.set(soundOn); if (soundOn) SFX.arrive(); else stopSteps(); };
-  paint();
+  button.onclick = () => { soundOn = wanted = !soundOn; try { localStorage.setItem(soundKey, soundOn ? 'on' : 'off'); } catch {} paintSound(); music.set(soundOn); if (soundOn) SFX.arrive(); else stopSteps(); };
+  paintSound();
   before.before(button);
 }

@@ -24,6 +24,8 @@ mixed = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(mixed)
 PRIOR = json.loads((ROOT / 'paperweights/robot-majority/prior-duplex.json').read_text())
 ANSWERS = json.loads((HERE / 'household-answers.json').read_text())
+# Two-month rule (household-streak.mjs): purple weak harvest / low cash rows, and Team C's path.
+STREAK = json.loads((HERE / 'household-streak.json').read_text())
 FLIPS = ('harvest', 'cash', 'attendance', 'weather')
 
 # Rover Risks: everyone knows most hazards; a few also fear a harmless square or
@@ -82,15 +84,17 @@ def rover_squares(seat):
     return [{'category': c, 'value': v} for c, v in squares]
 
 
-def _flip_weights(key):
-    v = ANSWERS[key]
+def _flip_weights(key, answers=None):
+    v = (answers or {**ANSWERS, **STREAK['rows']})[key]
     cat = key.split(':')[1]
     return {c: v.get(c, 0) for c in FLIPS if c != cat}
 
 
-USEFUL = sorted(k for k in ANSWERS if sum(_flip_weights(k).values()) > 0)
+USEFUL = sorted(k for k in ANSWERS if sum(_flip_weights(k, ANSWERS).values()) > 0)
 LIVE = [k for k in USEFUL if ANSWERS[k]['occur'] > 0]
 EXTRA = [k for k in USEFUL if ANSWERS[k]['occur'] == 0]
+# Every sheet holds the streak rows and Team C's other useful cards, in place of filler rows.
+SURE = list(STREAK['rows']) + [k for k in STREAK['teamC'] if k in EXTRA]
 ROWS = 24
 
 
@@ -100,7 +104,9 @@ def household_rows(seat):
     j = hh_member(seat)
     keys = [k for k in LIVE if rng.random() < 0.85]
     keys += rng.sample(EXTRA, max(0, ROWS - len(keys)))
-    keys = keys[:ROWS]
+    # Live rows keep their random draws; only filler rows give way.
+    live = [k for k in keys if k in LIVE]
+    keys = (live + SURE + [k for k in keys[len(live):] if k not in SURE])[:ROWS]
     rows = []
     for key in keys:
         w = _flip_weights(key)

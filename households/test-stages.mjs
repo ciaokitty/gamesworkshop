@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
-import {createPack,currentRound,poll,categories,cardKind} from './model.js';
+import {createPack,currentRound,poll,hallucinatedPoll,categories,cardKind} from './model.js';
 const report={rows:0,fatal:0,storm:0,pairWithoutStorm:0,singleIndicatorSafe:0,harvestVotes:0,cashVotes:0,weatherVotes:0,attendanceVotes:0};
 for(let seed=0;seed<120;seed++){
  const pack=createPack(seed,200,'medium');
  for(const team of pack.teams)for(const row of team.rounds){
   const v=Object.fromEntries(categories.map(c=>[c,row.targetCues[c].value]));
-  const pair=v.harvest==='failed'&&v.cash==='loan';
-  assert.equal(row.fatal,pair);
+  const pair=v.harvest==='failed'&&v.cash==='loan',streak=!!row.streak&&v.harvest==='weak'&&v.cash==='low';
+  assert.equal(row.fatal,pair||streak);
   assert.notEqual(v.attendance,'dropout');
   report.rows++;report.fatal+=row.fatal;report.storm+=v.weather==='storm';report.pairWithoutStorm+=pair&&v.weather!=='storm';
   report.singleIndicatorSafe+=!row.fatal&&(v.harvest==='failed'||v.cash==='loan');
@@ -40,4 +40,18 @@ for(const c of categories)assert.equal(cardKind(c,'failed','hard'),'normal');
 // Backfill must use the teaching sampler as well as the teaching archive.
 const empty=createPack(15,200,'medium');empty.historiesByTeam.A=[];
 for(const row of empty.teams[0].rounds){const full=poll(empty,row,categories,3);assert.equal(full.counts[row.fatal?'avoid':'go'],empty.teams[0].audienceCount);}
+// Two-month rule, staged by Team C in Indicators: weak+low twice in a row after a Skip.
+for(let seed=0;seed<120;seed++){
+ const p=createPack(seed,200,'medium'),m1=currentRound(p,2,[]),m2=currentRound(p,2,['go']),m3=currentRound(p,2,['go','avoid']),val=(r,c)=>r.targetCues[c].value;
+ assert.deepEqual([val(m1,'harvest'),val(m1,'cash'),m1.fatal],['weak','low',false]);
+ assert.deepEqual([val(m2,'harvest'),val(m2,'cash'),m2.initialCategory,m2.contextId,m2.fatal,m2.hallucinate],['weak','low','cash','C05',true,true]);
+ assert.deepEqual([val(m3,'harvest'),val(m3,'cash'),m3.fatal],['weak','enough',false]);
+ const n=p.teams[2].audienceCount,aud=poll(p,m2,['cash'],1),ai=hallucinatedPoll(p,m2,['cash']),after=hallucinatedPoll(p,m2,['cash','harvest']);
+ assert.ok(aud.counts.harvest>aud.counts.weather+aud.counts.attendance,'Audience asks for the harvest');
+ assert.equal(poll(p,m2,['cash','harvest'],0).counts.avoid,n,'The honest AI sees the streak');
+ assert.ok(ai.counts.avoid>ai.counts.go&&after.counts.go>after.counts.avoid&&Math.abs(after.counts.go-after.counts.avoid)<=.1*n,'AI is torn and tips to Skip');
+}
+// Teams A and B, and Team C outside Indicators, keep their seed-15 boards.
+for(const mode of ['easy','medium','hard'])for(const t of [0,1,2]){if(mode==='medium'&&t===2)continue;
+ const p=createPack(15,200,mode),legs=[];for(let i=0;i<4;i++){const r=currentRound(p,t,legs);assert.ok(!r.hallucinate&&(mode==='hard'||r.fatal===(r.targetCues.harvest.value==='failed'&&r.targetCues.cash.value==='loan')));legs.push(r.fatal?'avoid':'go')}}
 console.log(JSON.stringify({...report,fatalRate:report.fatal/report.rows,checks:'Teaching hazard rule, exact full-evidence predictions, no hidden leakage, stage-specific backfill, reproducibility, 15/200 parity'},null,2));

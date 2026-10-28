@@ -94,9 +94,20 @@ The deliberately simple teaching rule is:
 | Harvest and cash | Required action |
 | --- | --- |
 | Failed harvest AND loan | Intervene |
+| Weak harvest AND low cash, for the second month running after a Skip | Intervene |
 | Any other combination | Skip |
 
 One dotted indicator alone does not prove danger. Two together settle the rule.
+The two-month rule also applies to Risks; weak harvest and low cash carry no dotted
+border because one such month is safe. Use the < arrow to look back at last month.
+A purple context means last month's cash was low, so it is the colour to watch.
+
+**Team C stages the two-month rule.** Month 1 is weak harvest + low cash (Skip is
+right). Month 2 repeats it with only LOW CASH face up. The audience's sheets say
+FLIP HARVEST. The AI is deliberately confused here: HELP 54 / SKIP 46 before the
+flip, and SKIP 54 / HELP 46 after the weak harvest is shown, which is the wrong way.
+Skip is OUT. Help brings month 3 to weak harvest with enough cash. The honest
+model would say HELP 100% once both cards are up; the AI's wobble is staged.
 Storm alone does not cause dropout. Attendance is not a mandatory warning before
 failure. The teaching distribution includes both paired indicators and safe
 single-indicator cases so the audience can discover the distinction.

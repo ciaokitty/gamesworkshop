@@ -42,6 +42,9 @@ Empty polls distinguish **Waiting for votes** from **No matching card suggestion
 - Households: 24 rows `context colour + card -> category to flip`, from the Indicators archive's
   information gain (`household-answers.mjs` -> `household-answers.json`), weighted toward cards
   that occur in the seed-15 game, about one noisy row per seven team members per card.
+  Every sheet also holds the two-month-rule rows (purple weak harvest -> CASH, purple low cash
+  -> HARVEST) and Team C's other path cards (`household-streak.mjs` -> `household-streak.json`).
+  They replace filler rows only, so the rows for cards in the game are unchanged.
 
 Simulated seed-15 Households (the game we play): AI alone survives 2.5/6 months, no team
 finishes; AI plus the audience's flips survives about 4.7/6, half the teams finish, with 50%

@@ -9,21 +9,19 @@ import './summary.js';
 
 // The world is 212 pixels tall (three lanes); its width follows the screen, and the extra width goes
 // into the four month columns. Houses, school and children keep their pixel size.
-// The trial run has one household: a single lane through the middle of a quiet hamlet.
+// The trial run plays on the same map, with staged months (model.js) and a simulated room (room-client.js).
 const TRIAL = new URLSearchParams(location.search).has('trial');
-const H = 212, X0 = 38, RIGHT = 92, MIN_W = 400, MONTHS = 4, LANES = TRIAL ? 1 : 3, SCHOOL_Y = 100;
+const H = 212, X0 = 38, RIGHT = 92, MIN_W = 400, MONTHS = 4, LANES = 3, SCHOOL_Y = 100;
 let W = 0, CW = 59, VROAD = 396, SCHOOL = { x: 402, y: SCHOOL_Y }, DOOR = { x: 444, y: SCHOOL_Y + 50 };
 const YARD = SCHOOL_Y + 56;
 const A = m => Math.round(X0 + m * CW);
-const laneTop = k => (TRIAL ? 74 : 28) + 60 * k, roadY = k => laneTop(k) + 40;
-const SCENERY = TRIAL ? [
-  ['bush', 0, 0, 0.8, 0], ['well', 0, 1, 0.8, 0], ['bush', 0, 2, 0.22, 0], ['bush', 0, 2, 0.8, 0], ['handpump', 0, 3, 0.8, 0],
-] : [ // small props as fractions of a month column, clear of the boundaries and camp spots
+const laneTop = k => 28 + 60 * k, roadY = k => laneTop(k) + 40;
+const SCENERY = [ // small props] : [ // small props as fractions of a month column, clear of the boundaries and camp spots
   ['bush', 0, 1, 0.24, 0], ['bush', 0, 1, 0.78, 0], ['handpump', 0, 2, 0.8, 0], ['bush', 0, 3, 0.22, 0], ['bush', 0, 3, 0.82, 0],
   ['bush', 0, 0, 0.22, 1], ['bush', 0, 0, 0.78, 1], ['well', 0, 1, 0.8, 1], ['bush', 0, 2, 0.24, 1], ['bush', 0, 3, 0.22, 1],
   ['bush', 0, 0, 0.78, 2], ['bush', 0, 1, 0.22, 2], ['bush', 0, 2, 0.8, 2], ['bush', 0, 3, 0.2, 2], ['handpump', 0, 3, 0.8, 2],
 ];
-const BLOOMS = TRIAL ? [[0, 0, 0.27, 0], [1, 1, 0.3, 0], [2, 2, 0.6, 0], [1, 3, 0.27, 0]] : [ // [variant, month, fraction, lane]: small flower clumps beside the roads
+const BLOOMS = [ // [variant, month] : [ // [variant, month, fraction, lane]: small flower clumps beside the roads
   [0, 0, 0.27, 0], [2, 0, 0.73, 0], [1, 2, 0.3, 0],
   [2, 1, 0.14, 1], [1, 2, 0.62, 1], [0, 3, 0.73, 1],
   [1, 0, 0.14, 2], [1, 1, 0.6, 2], [0, 2, 0.27, 2], [2, 3, 0.5, 2],
@@ -31,30 +29,19 @@ const BLOOMS = TRIAL ? [[0, 0, 0.27, 0], [1, 1, 0.3, 0], [2, 2, 0.6, 0], [1, 3, 
 // Animals sit in the grass just above a road, mid-column: under any support camp and below
 // the detour, clear of the boundaries where children wait. Fixed spots, so they hint at nothing.
 // The hedgehog also names the bush it hides in: [..., feet y or null, bush fraction]; that bush sits 1px above its feet.
-const PETS = TRIAL ? [ // the hamlet's animals stand at a fixed height: [kind, lane, month, fraction, feet y]
-  ['hedgehog', 0, 1, 0.75, 71, 0.4], ['hen', 0, 0, 0.9, 206], ['cow', 0, 3, 0.03, 206],
-] : [ // [kind, lane, month, fraction of the column]
+const PETS = [ // [kind, lane] : [ // [kind, lane, month, fraction of the column]
   ['dogSit', 0, 1, 0.45], ['hen', 0, 3, 0.42], ['chick', 0, 3, 0.55], ['chick', 0, 3, 0.6],
   ['cat', 1, 1, 0.4], ['cow', 1, 3, 0.5],
   ['rooster', 2, 0, 0.5], ['hedgehog', 2, 1, 0.74, null, 0.22],
   ['cowBrown', 2, 2, 0.45],
 ];
-// Trial only: the hamlet around the lane, [sprite, variant, month, fraction, feet y], drawn back to front.
-const HAMLET = TRIAL ? [
-  ['tree', 0, 0, 0.33, 72], ['house', 1, 0, 0.97, 72], ['bush', 0, 1, 0.4, 70], ['tree', 1, 2, 0.13, 72], ['house', 3, 2, 0.5, 72],
-  ['bush', 0, 3, 0.03, 70], ['house', 0, 3, 0.63, 72],
-  ['tree', 1, 0, -0.37, 170], ['house', 2, 0, 0.3, 170], ['tree', 0, 1, 0.1, 168], ['house', 0, 1, 0.67, 170], ['tree', 1, 2, 0.37, 166],
-  ['house', 1, 2, 0.93, 170], ['tree', 0, 3, 0.7, 168],
-  ['bush', 0, 0, 0.07, 208], ['sapling', 1, 0, 0.5, 208], ['bush', 0, 1, 0.43, 206], ['well', 0, 1, 0.83, 208], ['bush', 0, 2, 0.17, 208],
-  ['sapling', 0, 3, 0.47, 208], ['bush', 0, 3, 0.87, 206],
-].sort((a, b) => a[4] - b[4]) : [];
 const YARD_PROPS = [['tree', 1, 16, 48], ['tree', 0, 60, 52], ['bush', 0, 76, 70], ['handpump', 0, 74, 92], ['bush', 0, 44, 80], ['sapling', 0, 24, 92], ['tree', 0, 10, 194], ['tree', 1, 48, 208], ['bush', 0, 74, 182], ['bush', 0, 62, 192]]; // x from the school's left edge
 const SPEED = 44, reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const canvas = document.querySelector('#shared-canvas'), ctx = canvas.getContext('2d');
 canvas.setAttribute('aria-label', 'Village map: three homes on the left, four months of fields, the school on the right. Tap a lane or press A to C to open a team.');
 canvas.tabIndex = 0;
-const footer = Object.assign(document.createElement('div'), { className: 'map-footer', innerHTML: `${TRIAL ? '' : '<span class="home">HOME</span>'}<span class="school">SCHOOL</span>` }); // the trial's one home sits mid-map
+const footer = Object.assign(document.createElement('div'), { className: 'map-footer', innerHTML: '<span class="home">HOME</span><span class="school">SCHOOL</span>' });
 document.querySelector('.shared-map').after(footer);
 canvas.style.filter = 'none'; // the light theme inverts canvases; keep the village in true colour
 canvas.style.display = 'block';
@@ -256,8 +243,7 @@ function paint(state, now) {
   }
   if (!reduceMotion) { const ph = (now / 1000) % 16; if (ph < 9) for (let b = 0; b < 3; b++) draw(SPR.bird[Math.floor(now / 220 + b) % 2], ph * 60 - 30 - b * 9, 16 + (b % 2) * 3); }
   g.fillStyle = 'rgba(255,255,255,.55)';
-  const [d0, d1] = TRIAL ? [laneTop(0), laneTop(0) + 60] : [28, H - 2]; // the trial's hamlet sits outside the month columns
-  for (let m = 0; m <= MONTHS; m++) for (let y = d0; y < d1; y += 3) g.fillRect(A(m), y, 1, 1);
+  for (let m = 0; m <= MONTHS; m++) for (let y = 28; y < H - 2; y += 3) g.fillRect(A(m), y, 1, 1);
   // the column each household is deciding, as the game's active band
   state.teams.forEach((t, k) => {
     const m = t.activeBand?.index;
@@ -267,16 +253,14 @@ function paint(state, now) {
     g.fillStyle = '#fffbe8';
     for (const x of [x0, x1 - 1]) for (let y = y0; y < y1; y += dense ? 1 : 2) g.fillRect(x, y, 1, 1);
   });
-  for (const [name, v, m, f, y] of HAMLET) { const rows = pick(name, v); draw(rows, A(m) + Math.round(CW * f) - Math.floor(rows[0].length / 2), y - rows.length); }
   for (const [name, v, m, f, lane] of SCENERY) { const rows = pick(name, v); draw(rows, A(m) + Math.round(CW * f) - Math.floor(rows[0].length / 2), roadY(lane) - 4 - rows.length); }
   for (const [name, v, x, yb] of YARD_PROPS) { const rows = pick(name, v); draw(rows, SCHOOL.x + x - Math.floor(rows[0].length / 2), yb - rows.length); }
   BLOOMS.forEach(([v, m, f, lane]) => { const rows = FLOWERS[v]; draw(rows, A(m) + Math.round(CW * f) - Math.floor(rows[0].length / 2), roadY(lane) - 3 - rows.length); });
   PETS.forEach((pet, i) => paintPet(pet, i, now));
   paintPups(now);
-  if (TRIAL) draw(SPR.cottage, 4, roadY(0) + 3 - SPR.cottage.length);
-  else SPR.house.slice(0, LANES).forEach((rows, k) => draw(rows, 0, roadY(k) + 3 - rows.length, k));
+  SPR.house.slice(0, LANES).forEach((rows, k) => draw(rows, 0, roadY(k) + 3 - rows.length, k));
   draw(SPR.schoolNoFlag, SCHOOL.x, SCHOOL.y);
-  if (!reduceMotion) for (const [sx, sy] of [TRIAL ? [26, roadY(0) - 23] : [10, roadY(1) - 28]]) for (let p = 0; p < 5; p++) { // chimney smoke
+  if (!reduceMotion) for (const [sx, sy] of [[10, roadY(1) - 28]]) for (let p = 0; p < 5; p++) { // chimney smoke
     const ph = (now / 1000 * 0.35 + p / 5) % 1, s = ph > 0.5 ? 2 : 1;
     g.globalAlpha = (1 - ph) * 0.8; g.fillStyle = '#e9e6dc';
     g.fillRect(Math.round(sx + Math.sin(ph * 6 + p) * 1.5 + ph * 6), Math.round(sy - ph * 16), s, s);
@@ -292,7 +276,6 @@ function paint(state, now) {
     if (v.arrived) return;
     const p = position(k, v), look = LOOK[k], id = TEAMS[look].id;
     if (v.stopped) { draw(SPR.kidSad[id], p.x - 6, p.y - 20, look, true); draw(SPR.bag, p.x + 5, p.y - 6, look); return; }
-    if (TRIAL && !v.walk) { draw(SPR.kidSit[id][!reduceMotion && Math.floor(now / 1400) % 3 === 2 ? 1 : 0], p.x - 7, p.y - 19, look); return; } // sits at each stop
     let frame = 0, bob = 0;
     if (v.walk) { frame = [1, 2, 3, 2][Math.floor(v.walk.d / 4) % 4]; bob = frame === 2 ? -1 : 0; }
     else if (!reduceMotion && Math.floor(now / 700 + k) % 2) bob = -1;

@@ -116,7 +116,6 @@ html.hh-stage[data-theme=dark] .hh-summary .sum-box{background:#28251f var(--sta
 .hh-summary .key::before{content:'';display:inline-block;width:22px;height:4px;margin-right:8px;vertical-align:middle;background:var(--c)}
 .hh-summary .key.you{--c:var(--egg)}.hh-summary .key.ai{--c:var(--ai)}
 .hh-summary .sum-teams{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
-.hh-summary .sum-teams:has(>.sum-team:only-child){grid-template-columns:minmax(0,520px);justify-content:center} /* the trial's single team keeps a Play-sized chart */
 .hh-summary .sum-team{border:2px solid var(--line);padding:12px 12px 8px;min-width:0}
 .hh-summary h3{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;white-space:nowrap;margin:0 0 4px;font-weight:400;font-size:28px;letter-spacing:.06em;text-transform:uppercase}
 .hh-summary h3 small{margin-left:auto;font-size:20px;color:var(--dim)}

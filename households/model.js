@@ -43,11 +43,23 @@ function teachingFatal(values, streak = false, boomPull = false) {
 // Team A, boom pull: sun in months 1 and 2, then month 3 brings rain with a good harvest
 // face up, low cash and irregular attendance; Help there keeps month 4 at good, enough
 // and regular.
-// Trial run (Team A alone): month 1 opens on a failed harvest, so the facilitator can point at
-// the dashed indicator frame. Cash keeps its draw (enough), so Skip is still safe there.
+// Trial run: mock months for all three teams, the same whatever they choose, so the facilitator
+// knows what is coming. Each team meets the dashed indicator frames (failed harvest, loan), the
+// pair that means Help, and AI readings that are split rather than certain (trialPoll).
+// [harvest, cash, attendance, weather, first card face up]
+const TRIAL_MONTHS = {
+  A: [['failed', 'enough', 'regular', 'rain', 'harvest'], ['good', 'loan', 'irregular', 'sun', 'cash'],
+    ['failed', 'loan', 'regular', 'storm', 'weather'], ['weak', 'enough', 'regular', 'rain', 'harvest']],
+  B: [['good', 'loan', 'regular', 'storm', 'cash'], ['failed', 'loan', 'irregular', 'rain', 'harvest'],
+    ['weak', 'enough', 'regular', 'sun', 'attendance'], ['failed', 'low', 'regular', 'storm', 'harvest']],
+  C: [['weak', 'enough', 'irregular', 'sun', 'attendance'], ['failed', 'enough', 'regular', 'storm', 'weather'],
+    ['good', 'loan', 'regular', 'rain', 'cash'], ['failed', 'loan', 'irregular', 'sun', 'harvest']],
+};
 function stagedScript(mode, teamId, index, actions, trial = false) {
-  const script = teamScript(mode, teamId, index, actions);
-  return trial && mode === 'medium' && index === 0 ? { ...script, harvest: 'failed', initialCategory: 'harvest' } : script;
+  if (!trial) return teamScript(mode, teamId, index, actions);
+  if (mode !== 'medium') return null;
+  const [harvest, cash, attendance, weather, initialCategory] = TRIAL_MONTHS[teamId][index];
+  return { harvest, cash, attendance, weather, initialCategory, trial: true };
 }
 
 function teamScript(mode, teamId, index, actions) {
@@ -159,7 +171,7 @@ function drawRow(rng, teamId, index, contextIndex, mode = 'hard', streak = false
   return {id:`${teamId}${index+1}`,teamId,roundIndex:index,contextId:context.id,
     initialCategory:script?.initialCategory ?? initialCategory,
     targetCues:Object.fromEntries(categories.map(c=>[c,makeCue(teamId,index,c,values[c],context.id)])),
-    fatal,...(streak&&{streak:true}),...(drought&&{drought:true}),...(script?.hallucinate&&{hallucinate:script.hallucinate}),...(script?.hint&&{hint:script.hint})};
+    fatal,...(streak&&{streak:true}),...(drought&&{drought:true}),...(script?.hallucinate&&{hallucinate:script.hallucinate}),...(script?.hint&&{hint:script.hint}),...(script?.trial&&{trial:true})};
 }
 function updateContext(previous,action='go') {
   const c=previous.targetCues;
@@ -325,7 +337,21 @@ export function hallucinatedPoll(pack, round, revealed = []) {
   return { counts, total, matched: 0, hallucinated: true };
 }
 
+// Trial AI: a mock reading from the cards face up, so it starts split (a failed harvest alone
+// reads Help 72 / Skip 28) and moves with every flip. Points towards Help, from an even 50.
+const TRIAL_AI = { harvest: { failed: 22, weak: 6, good: -18 }, cash: { loan: 22, low: 6, enough: -18 },
+  attendance: { irregular: 8, regular: -6 }, weather: { storm: 8, rain: -2, sun: 0 } };
+function trialPoll(pack, round, revealed) {
+  const v = c => round.targetCues[c].value, pair = revealed.includes('harvest') && revealed.includes('cash') && v('harvest') === 'failed' && v('cash') === 'loan';
+  const help = clamp(50 + revealed.reduce((s, c) => s + TRIAL_AI[c][v(c)], 0) + (pair ? 20 : 0), 6, 94) / 100;
+  const total = pack.teams.find(t => t.id === round.teamId).audienceCount;
+  const counts = { go: 0, avoid: Math.round(total * help), harvest: 0, cash: 0, attendance: 0, weather: 0 };
+  counts.go = total - counts.avoid;
+  return { counts, total, matched: 0 };
+}
+
 export function poll(pack, round, revealed = [], tokens = 0) {
+  if (round.trial && tokens <= 0) return trialPoll(pack, round, revealed);
   const revealedSet = new Set(revealed);
   const pool = selectPool(pack, round, revealedSet);
   const total = pack.teams.find(t=>t.id===round.teamId).audienceCount;

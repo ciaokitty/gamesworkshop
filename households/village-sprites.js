@@ -17,8 +17,8 @@ export const TEAMS = [
   {id:'C', t:'#ffbe0b', T:'#b88600', name:'Headband'},
   {id:'D', t:'#ff70a6', T:'#b8467a', name:'Beanie'}
 ];
-// The TEAMS child each map lane shows. The trial run has a single household: the Beanie kid, in pink.
-export const LOOK = new URLSearchParams(globalThis.location?.search).has('trial') ? [3] : [0, 1, 2];
+// The TEAMS child each map lane shows.
+export const LOOK = [0, 1, 2];
 
 // --- a tiny pixel canvas: draw with shapes, then auto-outline ---
 function grid(w, h) { const g = Array.from({length:h}, () => Array(w).fill('.')); g.w = w; g.h = h; return g; }
@@ -105,17 +105,6 @@ function kid(team, frame) {
   stamp(g, LEGS[frame], 0, 15);
   return rows(outline(g));
 }
-// Sitting on the ground facing right, bag behind; frame 1 hugs one knee up.
-const SIT_LEGS = [
-  ['..bbbbbtttt....', '...bb.ppppppp...', '......pppppppKK.'],
-  ['...........pp..', '..........ppp..', '..bbbbbttttpp...', '...bb.pppp..pp..', '......pppp..KKK.']];
-function kidSit(team, frame) {
-  const g = grid(16, 21);
-  stamp(g, HEADS[team], 0, 3);
-  stamp(g, TORSO.slice(0, 4), 0, 12);
-  stamp(g, SIT_LEGS[frame], 0, 19 - SIT_LEGS[frame].length);
-  return rows(outline(g));
-}
 function kidSad(team) { // stopped, head down, bag dropped
   const g = grid(14, 21);
   const head = HEADS[team].map(r => r.replace('k', 's'));
@@ -185,23 +174,6 @@ function tin() { // D: ochre house with a tin roof and a haystack
   for (let y = 12; y <= 28; y++) { const half = Math.min(6, Math.round((y - 12) * 0.55) + 1); for (let x = 7 - half; x < 7 + half; x++) px(g, x, y, ((x + y) % 5 === 0) ? 'Y' : 'y'); }
   vl(g, 6, 8, 5, 'b'); hl(g, 1, 28, 12, 'Y');
   rect(g, 31, 4, 2, 4, 'C');
-  return rows(outline(g));
-}
-
-function cottage() { // trial home: small whitewashed cottage with a brown roof and woodwork
-  const g = grid(30, 26);
-  for (let y = 3; y <= 11; y++) {
-    const inset = 11 - y + 1;
-    for (let x = inset; x < 30 - inset; x++) px(g, x, y, ((x + (y % 2) * 2) % 4 === 0) ? 'B' : 'b');
-  }
-  hl(g, 9, 3, 12, 'B'); hl(g, 0, 11, 30, 'B');
-  rect(g, 21, 0, 3, 5, 'W'); hl(g, 21, 0, 3, 'B');
-  rect(g, 4, 12, 22, 12, 'w'); vl(g, 4, 12, 12, 'W'); vl(g, 5, 12, 12, 'W'); hl(g, 4, 23, 22, 'W');
-  vl(g, 4, 12, 12, 'b'); vl(g, 25, 12, 12, 'b'); hl(g, 4, 12, 22, 'B');
-  rect(g, 16, 15, 6, 9, 'b'); rect(g, 17, 16, 4, 3, 'B'); rect(g, 17, 20, 4, 3, 'B'); px(g, 20, 19, 'o');
-  rect(g, 8, 15, 5, 5, 'B'); rect(g, 9, 16, 3, 3, 'q'); px(g, 10, 16, 'B'); px(g, 10, 18, 'B'); hl(g, 9, 17, 3, 'B'); hl(g, 7, 20, 7, 'b');
-  stamp(g, ['.f.', 'fGf', 'bbb'], 7, 21);
-  hl(g, 15, 24, 8, 'c');
   return rows(outline(g));
 }
 
@@ -492,8 +464,6 @@ export const SPR = {
   camp: [camp(0), camp(1)],
   kids: Object.fromEntries(['A', 'B', 'C', 'D'].map(t => [t, [0, 1, 2, 3].map(f => kid(t, f))])),
   kidSad: Object.fromEntries(['A', 'B', 'C', 'D'].map(t => [t, kidSad(t)])),
-  kidSit: Object.fromEntries(['A', 'B', 'C', 'D'].map(t => [t, [0, 1].map(f => kidSit(t, f))])),
-  cottage: cottage(),
   bag: rows(outline(bag())),
   tree: [tree(0), tree(1)], sapling: [sapling(0), sapling(1)], bush: bush(), well: well(), handpump: handpump(), cloud: cloud(), bird: BIRD, star: STAR
 };

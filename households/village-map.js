@@ -74,14 +74,17 @@ const pick = (name, v) => (Array.isArray(SPR[name][0]) ? SPR[name][v] : SPR[name
 let texts = [];
 const label = (text, x, y, size, colour, box = null) => texts.push({ text, x, y, size, colour, box });
 document.fonts?.load('20px "Jersey 10"');
+let tags = []; // each boxed label is a team tag named by its team id; its world-pixel box, for clicks
 function drawLabels(s) {
   ctx.textBaseline = 'middle';
+  tags = [];
   for (const t of texts) {
     ctx.font = `${Math.round(t.size * s)}px "Jersey 10", monospace`;
     const w = ctx.measureText(t.text).width, h = t.size * s * 0.8, pad = 2 * s, cy = t.y * s;
     let x = t.x * s;
     if (t.box) {
       x -= w / 2;
+      tags.push({ id: t.text, x0: (x - pad) / s - 2, x1: (x + w + pad) / s + 2, y0: (cy - h / 2 - pad) / s - 2, y1: (cy + h / 2 + pad) / s + 2 });
       ctx.fillStyle = t.box.border; ctx.fillRect(Math.round(x - pad - s), Math.round(cy - h / 2 - pad - s), Math.round(w + 2 * pad + 2 * s), Math.round(h + 2 * pad + 2 * s));
       ctx.fillStyle = t.box.fill; ctx.fillRect(Math.round(x - pad), Math.round(cy - h / 2 - pad), Math.round(w + 2 * pad), Math.round(h + 2 * pad));
     }
@@ -172,10 +175,13 @@ document.querySelector('#teams').addEventListener('click', e => {
   const button = e.target.closest('[data-action]'), team = e.target.closest('.team');
   if (button && team && !button.disabled) chosen[team.dataset.team] = button.dataset.action;
 }, true);
-canvas.addEventListener('click', e => { // tap a household's lane to open its panel
-  const box = canvas.getBoundingClientRect(), y = (e.clientY - box.top) / box.height * H;
-  const k = Math.max(0, Math.min(LANES - 1, Math.floor((y - 28) / 60))), t = window.paperweights?.state().teams[k];
-  if (t) modal.open(t.id);
+canvas.addEventListener('click', e => { // tap a team's tag, or else its lane, to open its panel
+  const box = canvas.getBoundingClientRect(), x = (e.clientX - box.left) / box.width * W, y = (e.clientY - box.top) / box.height * H;
+  const teams = window.paperweights?.state().teams || [];
+  // a tag can leave its lane: a finished team's flag stands on the school fence, beside another lane
+  const tag = tags.findLast(r => x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1 && teams.some(t => t.id === r.id));
+  const k = Math.max(0, Math.min(LANES - 1, Math.floor((y - 28) / 60))), id = tag?.id ?? teams[k]?.id;
+  if (id) modal.open(id);
 });
 
 const blank = () => ({ legs: [], camps: [], trail: [], queue: [], walk: null, status: 'deciding', stopped: false, arrived: false, outQueued: false, finishQueued: false });

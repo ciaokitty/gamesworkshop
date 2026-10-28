@@ -1,11 +1,12 @@
 /* Households stage: map fills the screen, team panels pop up as retro dialogs. */
 @font-face{font-family:"Jersey 10";src:url("assets/fonts/Jersey10-Regular.ttf") format("truetype");font-display:swap}
+@font-face{font-family:"Shadows Into Light";src:url("assets/fonts/ShadowsIntoLight-Regular.ttf") format("truetype");font-display:swap}
 body.hh-stage{--pixel:"Jersey 10",var(--mono)}
 body.hh-stage .team{font-synthesis:none;font-weight:400}
 /* Dark theme only: warm charcoal with still static on the page and dialogs; card faces stay plain */
 html.hh-stage[data-theme=dark]{--bg:#28251f;--soft:#36322a;--line:#4d473d;--faint:#5c564b}
 html.hh-stage[data-theme=dark],html.hh-stage[data-theme=dark] body{background:#28251f var(--static)}
-html.hh-stage[data-theme=dark] body.hh-stage .team{background:#28251f var(--static)}
+html.hh-stage[data-theme=dark] body.hh-stage .folder-body,html.hh-stage[data-theme=dark] body.hh-stage .folder-tab[aria-selected=true]{background:#28251f var(--static)}
 body.hh-stage main{grid-template-rows:auto minmax(0,1fr) auto}
 body.hh-stage .shared-map{border:0}
 body.hh-stage #shared-canvas{cursor:pointer}
@@ -23,8 +24,25 @@ body.hh-stage #shared-canvas:focus-visible{outline:2px solid var(--ink);outline-
 /* The dialog layer: closed panels stay in the DOM so the game keeps driving them */
 body.hh-stage #teams{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;grid-template-columns:none;pointer-events:none;padding:16px;margin:0}
 body.hh-stage #teams.has-open{pointer-events:auto;background:rgba(0,0,0,.45)}
-body.hh-stage .team{font-family:var(--pixel);display:none;width:min(640px,100%);max-height:calc(100dvh - 32px);overflow:auto;background:var(--bg);border:4px solid var(--ink);box-shadow:8px 8px 0 rgba(0,0,0,.65),inset 0 0 0 2px var(--bg),inset 0 0 0 4px var(--faint);padding:16px 18px 18px}
-body.hh-stage .team.open{display:block;animation:hh-pop .18s steps(4,end)}
+body.hh-stage .team{font-family:var(--pixel);display:none;width:min(640px,100%);max-height:calc(100dvh - 32px);background:none;border:0;padding:0}
+body.hh-stage .team.open{display:flex;flex-direction:column;animation:hh-pop .18s steps(4,end)}
+/* The dialog is a folder: Card and Patterns tabs above the box; both panes share one cell so the box keeps the card's size */
+body.hh-stage .folder-body{display:grid;min-height:0;overflow:auto;background:var(--bg);border:4px solid var(--ink);box-shadow:8px 8px 0 rgba(0,0,0,.65),inset 0 0 0 2px var(--bg),inset 0 0 0 4px var(--faint);padding:16px 18px 18px}
+body.hh-stage .folder-body>*{grid-area:1/1;min-width:0}
+body.hh-stage .team[data-tab=patterns] .tab-card,body.hh-stage .team:not([data-tab=patterns]) .tab-patterns{visibility:hidden}
+body.hh-stage .folder-tabs{position:relative;z-index:1;display:flex;align-items:flex-end;gap:6px;padding-left:14px;margin-bottom:-4px}
+body.hh-stage .folder-tab{border:4px solid var(--ink);border-bottom:0;border-radius:0;box-shadow:inset 0 -4px 0 var(--ink);background:var(--soft);color:var(--dim);padding:6px 18px 8px;cursor:pointer;font:26px/1 var(--pixel);letter-spacing:.06em;text-transform:uppercase}
+body.hh-stage .folder-tab:hover{background:var(--soft);color:var(--ink);border-color:var(--ink)}
+body.hh-stage .folder-tab[aria-selected=true]{background:var(--bg);color:var(--ink);box-shadow:none;padding-top:10px;cursor:default}
+/* Patterns: a lined notepad in handwriting, the size of the team title */
+body.hh-stage .tab-patterns{display:flex;flex-direction:column;min-height:0}
+body.hh-stage .tab-patterns .team-name{display:flex;justify-content:space-between}
+body.hh-stage .tab-patterns .team-name>span{padding-left:42px} /* lines up with the Card title, which leaves room for the month '<' */
+body.hh-stage{--paper:#f1ead2;--pen:#23315f;--rule:#a9bdd3;--margin:#d98b7c}
+body.hh-stage .notepad,.hh-notes .note-page{font:32px/44px "Shadows Into Light",cursive;color:var(--pen);background:linear-gradient(90deg,transparent 38px,var(--margin) 38px 40px,transparent 40px),repeating-linear-gradient(transparent 0 43px,var(--rule) 43px 44px) var(--paper);background-attachment:local;background-position:0 8px;padding:8px 16px 8px 54px;overflow-wrap:anywhere}
+body.hh-stage .notepad{flex:1 1 0;min-height:0;width:100%;margin-top:12px;resize:none;border:2px solid var(--ink);border-radius:0;box-shadow:3px 3px 0 var(--faint)}
+body.hh-stage .notepad::placeholder{color:var(--pen);opacity:.4}
+body.hh-stage .notepad:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
 @keyframes hh-pop{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){body.hh-stage .team.open{animation:none}}
 body.hh-stage .team .team-name{font-family:var(--pixel);font-size:32px;line-height:1.1;height:auto;margin-bottom:4px;letter-spacing:.04em;text-transform:uppercase;align-items:center}
@@ -76,14 +94,14 @@ body.hh-stage .team .tokens{gap:4px;align-items:center}
 body.hh-stage .team .tokens .coin{width:26px;height:26px;display:block;image-rendering:pixelated}
 body.hh-stage .team .tokens .coin.spent{color:var(--dim);opacity:.8}
 @media (max-width:600px){
- body.hh-stage .team{padding:12px}
+ body.hh-stage .folder-body{padding:12px}
  body.hh-stage .team .cards{gap:6px}
  body.hh-stage .team .poll-row{grid-template-columns:110px minmax(0,1fr) 42px;font-size:17px}
  body.hh-stage .team .cardlabel{font-size:14px}body.hh-stage .team .card i{font-size:18px}
 }
 
 
-/* End-of-game summary (Finish): one panel per team, what the team did over what only following the AI would have done */
+/* Graph: one panel per team, what the team has done so far over what only following the AI would have done */
 .hh-summary{--ai:#3987e5;--egg:#f0ead6;position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.55);font-family:var(--pixel);font-synthesis:none}
 html[data-theme=light] .hh-summary{--ai:#2a78d6;--egg:var(--ink)}
 .hh-summary[hidden]{display:none}
@@ -129,3 +147,7 @@ body.hh-stage .team .track{position:relative}
 body.hh-stage .team .poll.has-shift .poll-row{grid-template-columns:150px minmax(0,1fr) 52px 44px}
 body.hh-stage .team .track .was{position:absolute;top:-6px;bottom:-6px;width:3px;margin-left:-1px;background:var(--shift)}
 body.hh-stage .team .poll-row .shift{font-style:normal;color:var(--shift);text-align:right}
+
+/* Notes: every team's Patterns notepad on one page */
+.hh-notes .note-page{margin:6px 0 4px;min-height:96px;border:2px solid var(--ink);white-space:pre-wrap}
+.hh-notes .note-page.empty{color:color-mix(in srgb,var(--pen) 45%,var(--paper))}

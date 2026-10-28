@@ -1,5 +1,5 @@
-// Households (Indicators mode): the facilitator's Finish button ends the game for every team and
-// shows each team's HELP/SKIP calls month by month beside what following only the AI would have done.
+// Households (Indicators mode): the facilitator's Graph button shows, over the map and without ending
+// the game, each team's HELP/SKIP calls so far beside what following only the AI would have done.
 // competitive.js keeps the decision log; this only reads window.paperweights.state().
 import { TEAMS, LOOK } from './village-sprites.js';
 import { SFX } from './sound.js';
@@ -97,15 +97,15 @@ function chart(t, k, ai) {
     ${path('ai-path', ai)}${path('you', log)}${out}<g class="hits">${hits}</g></svg>`;
 }
 
-function result(t) {
+function result(t, ended) {
   if (t.status === 'finished') return 'FINISHED';
   if (t.status === 'eliminated') return `OUT IN MONTH ${t.log.at(-1)?.month ?? t.round}`;
-  return `STOPPED AT MONTH ${t.round}`;
+  return ended ? `STOPPED AT MONTH ${t.round}` : `MONTH ${t.round}`;
 }
 
-function panel(t, k, ai) {
+function panel(t, k, ai, ended) {
   return `<section class="sum-team" data-k="${k}" style="--team:${TEAMS[LOOK[k]].t}">
-    <h3><span class="chip"></span>Team ${t.id}<small>${result(t)}</small></h3>
+    <h3><span class="chip"></span>Team ${t.id}<small>${result(t, ended)}</small></h3>
     ${chart(t, k, ai)}
     <p class="verdict">${esc(verdict(t))}</p>
   </section>`;
@@ -124,7 +124,7 @@ function show() {
   overlay.innerHTML = `<div class="sum-box">
     <div class="sum-head"><h2>How each team decided</h2><button class="modal-close" aria-label="Back to the map" title="Back to the map">${label('X')}</button></div>
     <div class="sum-legend"><span class="key you">What the team did</span><span class="key ai">If only the AI was followed</span></div>
-    <div class="sum-teams">${state.teams.map((t, k) => panel(t, k, ai[k])).join('')}</div>
+    <div class="sum-teams">${state.teams.map((t, k) => panel(t, k, ai[k], state.ended)).join('')}</div>
   </div>`;
   overlay.querySelector('.sum-box').append(tip);
   overlay.querySelector('.modal-close').onclick = hide;
@@ -158,19 +158,10 @@ function hide() {
   document.querySelector('#shared-canvas')?.focus({ preventScroll: true });
 }
 
-const button = Object.assign(document.createElement('button'), { id: 'finish', textContent: 'Finish' });
-button.title = 'End the game for every team and show how each team decided';
+const button = Object.assign(document.createElement('button'), { id: 'graph', textContent: 'Graph' });
+button.title = 'Show how each team has decided so far; the game carries on';
 document.querySelector('#reset').before(button);
-button.onclick = () => {
-  const state = window.paperweights?.state();
-  if (!state) return;
-  if (!state.ended) {
-    if (!confirm('Finish the game for every team?')) return;
-    window.paperweights.finish();
-    SFX.finish();
-  }
-  show();
-};
+button.onclick = () => { if (window.paperweights?.state()) { SFX.open(); show(); } };
 // Only Indicators mode records the decisions; the button follows the mode select.
 const sync = () => { button.hidden = window.paperweights?.state().mode !== 'medium'; };
 document.querySelector('#difficulty').addEventListener('change', () => { overlay.hidden = true; sync(); });

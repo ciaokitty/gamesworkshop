@@ -26,13 +26,14 @@ before. `stagedScript` stages it for Team C in Indicators (weak+low in months 1
 and 2, Cash face up in month 2, weak + enough in month 3 after Help), and
 `hallucinatedPoll` is the AI's staged 54/46 wobble for that month.
 
-Attendance rule (Indicators, live rows only): good harvest + enough cash +
-irregular attendance is fatal. The archive is drawn without it, so every poll is
-unchanged and the AI says Skip on such a month even with every card up.
-`stagedScript` gives Team A month 3 good/enough/irregular with Cash face up, and
+Boom pull (Indicators, live rows only): after two sunny months (`row.drought`), a
+rainy month with a good harvest and irregular attendance is fatal, whatever the
+cash. The archive is drawn without it, so every poll is unchanged and the AI says
+Skip on such a month even with every card up. `stagedScript` gives Team A sun in
+months 1 and 2, then month 3 rain/good/low/irregular with Harvest face up, and
 month 4 good/enough/regular after Help; `hintedPoll` is the simulated audience's
-FLIP ATTENDANCE and `hallucinatedPoll` the AI's Skip 90% for that month. Team B,
-every other AI/audience reading and every Risks/Judgement board at seed 15 are
+50/50 FLIP WEATHER / FLIP ATTENDANCE and `hallucinatedPoll` the AI's Skip 90% for
+that month. Teams B and C, and every Risks/Judgement board at seed 15, are
 unchanged.
 
 Archive and live rows share the same stage-specific generator. Teaching polls

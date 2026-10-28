@@ -47,8 +47,9 @@ Empty polls distinguish **Waiting for votes** from **No matching card suggestion
   it shows **No matching card suggestion** straight away (22 of 117 seed-15 polls).
   Staged rows (`household-staged.mjs` -> `household-staged.json`): every sheet holds the
   two-month-rule rows (purple weak harvest -> CASH, purple low cash -> HARVEST) and Team C's
-  other path cards; Team A's sheets alone hold green enough cash -> ATTENDANCE (authored: the
-  AI's archive has never seen the attendance rule) and green irregular attendance. They
+  other path cards; Team A's sheets alone hold the boom-pull rows (authored: the AI's archive
+  has never seen the rule): green good harvest -> WEATHER or ATTENDANCE, half the members
+  each, then green irregular attendance -> WEATHER and green rain -> ATTENDANCE. They
   replace filler rows only, so the rows for cards in the game are unchanged, and Teams B and C
   keep identical sheets.
 

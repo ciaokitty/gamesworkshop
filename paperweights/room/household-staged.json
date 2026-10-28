@@ -9,9 +9,6 @@
    "cash": 142,
    "attendance": 0,
    "weather": 1
-  },
-  "C04:cash:enough": {
-   "attendance": 1
   }
  },
  "sure": [
@@ -20,9 +17,17 @@
   "C01:weather:storm"
  ],
  "teams": {
-  "A": [
-   "C04:cash:enough",
-   "C04:attendance:irregular"
-  ]
+  "A": {
+   "C04:harvest:good": {
+    "weather": 1,
+    "attendance": 1
+   },
+   "C04:attendance:irregular": {
+    "weather": 1
+   },
+   "C04:weather:rain": {
+    "attendance": 1
+   }
+  }
  }
 }

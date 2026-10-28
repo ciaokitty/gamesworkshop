@@ -25,7 +25,7 @@ _spec.loader.exec_module(mixed)
 PRIOR = json.loads((ROOT / 'paperweights/robot-majority/prior-duplex.json').read_text())
 ANSWERS = json.loads((HERE / 'household-answers.json').read_text())
 # Staged months (household-staged.mjs): two-month rule rows and Team C's path on every sheet,
-# attendance rule rows on Team A's sheets only.
+# boom-pull rows on Team A's sheets only.
 STAGED = json.loads((HERE / 'household-staged.json').read_text())
 FLIPS = ('harvest', 'cash', 'attendance', 'weather')
 
@@ -108,7 +108,8 @@ def household_rows(seat):
     keys += rng.sample(EXTRA, max(0, ROWS - len(keys)))
     # Live rows keep their random draws; only filler rows give way.
     live = [k for k in keys if k in LIVE]
-    sure = [k for k in STAGED['teams'].get(hh_team(seat), []) if k not in live] + SURE
+    authored = STAGED['teams'].get(hh_team(seat), {})
+    sure = [k for k in authored if k not in live] + SURE
     keys = (live + sure + [k for k in keys[len(live):] if k not in sure])[:ROWS]
     rows = []
     for key in keys:
@@ -127,6 +128,10 @@ def household_rows(seat):
         # Chosen after the draws above, so every other row keeps its answer.
         if w[answer] < USEFUL_SHARE * sum(w.values()):
             answer = max(w, key=w.get)
+        # A team's authored row: its members split evenly across the top answers.
+        if key in authored:
+            top = [c for c, n in authored[key].items() if n == max(authored[key].values())]
+            answer = top[j % len(top)]
         ctx, cat, value = key.split(':')
         rows.append({'key': key, 'context': ctx, 'category': cat, 'value': value, 'flip': answer})
     rows.sort(key=lambda r: (r['context'], FLIPS.index(r['category']), r['value']))

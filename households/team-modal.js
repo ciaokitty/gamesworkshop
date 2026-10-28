@@ -3,6 +3,7 @@
 // opens it from the map (or keys A-D), and closes it once the team has decided.
 import { SFX } from './sound.js';
 import { label } from './pixel-cards.js';
+import { TEAMS, LOOK } from './village-sprites.js';
 
 const teams = document.querySelector('#teams');
 const css = Object.assign(document.createElement('link'), { rel: 'stylesheet', href: new URL('stage.css', import.meta.url).href });
@@ -26,12 +27,35 @@ document.documentElement.style.setProperty('--static', `url(${staticTile()})`);
 let openId = null;
 export const focused = () => openId;
 
-// Each team's Patterns notepad. Kept here, not in the panel, because panels are rebuilt on reset and stage change.
+// Each team's Patterns notes. Kept here, not in the panel, because panels are rebuilt on reset and stage change.
 const notes = {};
 export const note = id => notes[id] || '';
-export function clearNotes() {
+document.querySelector('#reset').addEventListener('click', () => { // Reset starts a new game, so it clears them
   for (const id in notes) delete notes[id];
-  teams.querySelectorAll('.notepad').forEach(pad => { pad.value = ''; });
+  teams.querySelectorAll('.team').forEach(fillSheet);
+});
+
+const esc = t => String(t).replace(/[&<>"]/g, c => `&#${c.charCodeAt(0)};`);
+const grow = pad => { // whole ruled lines: the handwriting's tall letters stretch scrollHeight a few pixels past them
+  const line = parseFloat(getComputedStyle(pad).lineHeight);
+  pad.style.height = 'auto';
+  pad.style.height = `${Math.max(1, Math.round(pad.scrollHeight / line)) * line}px`;
+};
+
+// One shared sheet: every team's notes in team order, each in its team's ink. The open team's part is its notepad.
+function fillSheet(el) {
+  const sheet = el.querySelector('.notepad'), pad = sheet?.querySelector('textarea');
+  if (!sheet) return;
+  pad.value = note(el.dataset.team);
+  sheet.replaceChildren(...[...teams.querySelectorAll('.team')].flatMap((t, k) => {
+    const ink = TEAMS[LOOK[k]].T, id = t.dataset.team;
+    if (id === el.dataset.team) { pad.style.setProperty('--team', ink); return [pad]; }
+    if (!note(id).trim()) return [];
+    const p = Object.assign(document.createElement('p'), { title: `Team ${id}`, innerHTML: esc(note(id).trim()) });
+    p.style.setProperty('--team', ink);
+    return [p];
+  }));
+  grow(pad);
 }
 
 function closeButton() {
@@ -58,7 +82,7 @@ function folder(el) {
       if (el.dataset.tab === b.dataset.tab) return;
       showTab(el, b.dataset.tab);
       SFX.open();
-      if (b.dataset.tab === 'patterns') el.querySelector('.notepad').focus({ preventScroll: true });
+      if (b.dataset.tab === 'patterns') { fillSheet(el); el.querySelector('.notepad textarea').focus({ preventScroll: true }); }
     };
   });
   const card = Object.assign(document.createElement('div'), { className: 'tab-card' });
@@ -66,14 +90,15 @@ function folder(el) {
   card.append(...el.childNodes);
   const patterns = Object.assign(document.createElement('div'), { className: 'tab-patterns' });
   patterns.setAttribute('role', 'tabpanel');
-  patterns.innerHTML = `<div class="team-name"><span>Team ${id}</span></div><textarea class="notepad" rows="1" spellcheck="false" placeholder="Patterns you notice..." aria-label="Team ${id} notes"></textarea>`;
+  patterns.innerHTML = `<div class="team-name"><span>Team ${id}</span></div><div class="notepad"><textarea rows="1" spellcheck="false" placeholder="Patterns you notice..." aria-label="Team ${id} notes"></textarea></div>`;
   patterns.querySelector('.team-name').append(closeButton());
-  const pad = patterns.querySelector('.notepad');
-  pad.value = note(id);
-  pad.oninput = () => { notes[id] = pad.value; };
+  const sheet = patterns.querySelector('.notepad'), pad = sheet.querySelector('textarea');
+  pad.oninput = () => { notes[id] = pad.value; grow(pad); };
+  sheet.onclick = e => { if (e.target === sheet) pad.focus(); }; // the paper below the notes writes on
   const body = Object.assign(document.createElement('div'), { className: 'folder-body' });
   body.append(card, patterns);
   el.append(tabs, body);
+  fillSheet(el);
   showTab(el, 'card');
 }
 

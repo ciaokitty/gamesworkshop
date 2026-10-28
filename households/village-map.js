@@ -6,7 +6,6 @@ import { PAL, TEAMS, LOOK, SPR, FIELDS, ANIMALS, PUPS, FLOWERS } from './village
 import { SFX, addSoundButton, walking } from './sound.js';
 import * as modal from './team-modal.js';
 import './summary.js';
-import './notes.js'; // after summary.js: the Notes button sits beside Graph
 
 // The world is 212 pixels tall (three lanes); its width follows the screen, and the extra width goes
 // into the four month columns. Houses, school and children keep their pixel size.

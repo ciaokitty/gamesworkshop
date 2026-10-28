@@ -39,10 +39,13 @@ body.hh-stage .tab-patterns{display:flex;flex-direction:column;min-height:0}
 body.hh-stage .tab-patterns .team-name{display:flex;justify-content:space-between}
 body.hh-stage .tab-patterns .team-name>span{padding-left:42px} /* lines up with the Card title, which leaves room for the month '<' */
 body.hh-stage{--paper:#f1ead2;--pen:#23315f;--rule:#a9bdd3;--margin:#d98b7c}
-body.hh-stage .notepad,.hh-notes .note-page{font:32px/44px "Shadows Into Light",cursive;color:var(--pen);background:linear-gradient(90deg,transparent 38px,var(--margin) 38px 40px,transparent 40px),repeating-linear-gradient(transparent 0 43px,var(--rule) 43px 44px) var(--paper);background-attachment:local;background-position:0 8px;padding:8px 16px 8px 54px;overflow-wrap:anywhere}
-body.hh-stage .notepad{flex:1 1 0;min-height:0;width:100%;margin-top:12px;resize:none;border:2px solid var(--ink);border-radius:0;box-shadow:3px 3px 0 var(--faint)}
-body.hh-stage .notepad::placeholder{color:var(--pen);opacity:.4}
-body.hh-stage .notepad:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+body.hh-stage .notepad{font:32px/44px "Shadows Into Light",cursive;color:var(--pen);background:linear-gradient(90deg,transparent 38px,var(--margin) 38px 40px,transparent 40px),repeating-linear-gradient(transparent 0 43px,var(--rule) 43px 44px) var(--paper);background-attachment:local;background-position:0 8px;padding:8px 16px 8px 54px;overflow-wrap:anywhere}
+body.hh-stage .notepad{flex:1 1 0;min-height:0;overflow:auto;margin-top:12px;border:2px solid var(--ink);box-shadow:3px 3px 0 var(--faint);cursor:text}
+/* Every team's notes on the one sheet, each in its team's colour, darkened to read on the paper */
+body.hh-stage .notepad>*{display:block;width:100%;margin:0;padding:0;border:0;background:none;font:inherit;color:color-mix(in srgb,var(--team) 80%,#000);white-space:pre-wrap;overflow-wrap:anywhere}
+body.hh-stage .notepad textarea{resize:none;overflow:hidden;outline:0}
+body.hh-stage .notepad textarea::placeholder{color:inherit;opacity:.4}
+body.hh-stage .notepad:focus-within{outline:2px solid var(--ink);outline-offset:3px}
 @keyframes hh-pop{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){body.hh-stage .team.open{animation:none}}
 body.hh-stage .team .team-name{font-family:var(--pixel);font-size:32px;line-height:1.1;height:auto;margin-bottom:4px;letter-spacing:.04em;text-transform:uppercase;align-items:center}
@@ -148,10 +151,3 @@ body.hh-stage .team .poll.has-shift .poll-row{grid-template-columns:150px minmax
 body.hh-stage .team .track .was{position:absolute;top:-6px;bottom:-6px;width:3px;margin-left:-1px;background:var(--shift)}
 body.hh-stage .team .poll-row .shift{font-style:normal;color:var(--shift);text-align:right}
 
-/* Notes: every team's Patterns notepad on one sheet, one team after another */
-.hh-notes .sum-box{width:min(760px,100%)}
-.hh-notes .note-page{margin-top:14px;min-height:140px;border:2px solid var(--ink)}
-.hh-notes .note-page p{margin:0;white-space:pre-wrap}
-.hh-notes .note-page b{display:inline-flex;align-items:center;gap:8px;margin-right:14px;font:400 26px/1 var(--pixel);letter-spacing:.06em;text-transform:uppercase;vertical-align:2px}
-.hh-notes .note-page .chip{width:14px;height:14px;background:var(--team);border:2px solid var(--pen)}
-.hh-notes .note-page .empty{color:color-mix(in srgb,var(--pen) 45%,var(--paper))}

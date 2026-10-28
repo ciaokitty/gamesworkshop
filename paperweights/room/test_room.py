@@ -64,7 +64,7 @@ class RoomTests(unittest.TestCase):
 
     def test_no_data_waiting_and_voting_are_distinct(self):
         r=self.room();r.bots=20
-        empty=r.open('HA','household',cue='C04:harvest:good')
+        empty=r.open('HA','household',cue='C02:harvest:good')
         self.assertEqual(r.tally(empty)['status'],'no-data')
         useful=r.open('HA','household',cue='C01:cash:loan')
         tally=r.tally(useful)

@@ -29,18 +29,35 @@ export function cardKind(category, value, mode = 'hard') {
 const weakLow = (values) => values.harvest === 'weak' && values.cash === 'low';
 
 // streak: last month was also weak harvest + low cash and the team skipped.
-function teachingFatal(values, streak = false) {
-  return (values.harvest === 'failed' && values.cash === 'loan') || (streak && weakLow(values));
+// boomPull: the first rain after a drought (two sunny months) brings a good harvest that
+// pulls an irregular attender into farm work, whatever the cash. Live Indicators rows
+// only: the AI's archive has never seen it, so the AI says Skip, and Risks keeps its boards.
+function teachingFatal(values, streak = false, boomPull = false) {
+  return (values.harvest === 'failed' && values.cash === 'loan') || (streak && weakLow(values))
+    || (boomPull && values.weather === 'rain' && values.harvest === 'good' && values.attendance === 'irregular');
 }
 
-// Team C depicts the two-month rule in Indicators: weak harvest + low cash in month 1,
-// the same again in month 2 with only Cash face up. Help there brings month 3 to weak
-// harvest with enough cash. The random draws are still consumed, so nothing else moves.
-function teamCScript(mode, teamId, index, actions) {
-  if (mode !== 'medium' || teamId !== 'C') return null;
-  if (index === 0) return { harvest: 'weak', cash: 'low' };
-  if (index === 1 && actions[0] === 'go') return { harvest: 'weak', cash: 'low', initialCategory: 'cash', hallucinate: true };
-  if (index === 2 && actions[0] === 'go' && actions[1] === 'avoid') return { harvest: 'weak', cash: 'enough' };
+// Staged months in Indicators. The random draws are still consumed, so nothing else moves.
+// Team C, two-month rule: weak harvest + low cash in month 1, the same again in month 2 with
+// only Cash face up; Help there brings month 3 to weak harvest with enough cash.
+// Team A, boom pull: sun in months 1 and 2, then month 3 brings rain with a good harvest
+// face up, low cash and irregular attendance; Help there keeps month 4 at good, enough
+// and regular.
+function stagedScript(mode, teamId, index, actions) {
+  if (mode !== 'medium') return null;
+  if (teamId === 'C') {
+    if (index === 0) return { harvest: 'weak', cash: 'low' };
+    if (index === 1 && actions[0] === 'go') return { harvest: 'weak', cash: 'low', initialCategory: 'cash', hallucinate: 'torn' };
+    if (index === 2 && actions[0] === 'go' && actions[1] === 'avoid') return { harvest: 'weak', cash: 'enough' };
+  }
+  if (teamId === 'A') {
+    if (index === 0 || (index === 1 && actions[0] === 'go')) return { weather: 'sun' };
+    if (index === 2 && actions[0] === 'go' && actions[1] === 'avoid')
+      return { harvest: 'good', cash: 'low', attendance: 'irregular', weather: 'rain', initialCategory: 'harvest',
+        hallucinate: 'skip', hint: ['weather', 'attendance'] };
+    if (index === 3 && actions[0] === 'go' && actions[1] === 'avoid' && actions[2] === 'avoid')
+      return { harvest: 'good', cash: 'enough', attendance: 'regular' };
+  }
   return null;
 }
 
@@ -104,18 +121,18 @@ function makeCue(teamId, roundIndex, category, value, contextId) {
 }
 
 // Archive and live rows call this exact sampler with independent random seeds.
-function drawRow(rng, teamId, index, contextIndex, mode = 'hard', streak = false, script = null) {
+function drawRow(rng, teamId, index, contextIndex, mode = 'hard', streak = false, script = null, drought = false) {
   const context = contexts[contextIndex];
   // Three previous-survey contexts, each with/without recent support.
   const pressure = [.10, -.16, .28, .02, .22, -.04][contextIndex];
   const latent = pressure + (mode === 'hard' ? 0 : .30) + (rng() - .5) * 1.5;
   let harvest = grade(latent + (rng() - .5) * .7, [.48, -.08], ['failed','weak','good']);
   let cash = grade(latent * .8 + (rng() - .5) * .85, [.40, -.15], ['loan','low','enough']);
-  if (script) ({ harvest, cash } = script);
+  if (script) ({ harvest = harvest, cash = cash } = script);
   const w = rng();
-  const weather = mode === 'hard'
+  const weather = script?.weather ?? (mode === 'hard'
     ? (w < .45 ? 'rain' : w < .80 ? 'sun' : 'storm')
-    : (w < .35 ? 'storm' : w < .70 ? 'rain' : 'sun');
+    : (w < .35 ? 'storm' : w < .70 ? 'rain' : 'sun'));
   // Synthetic association, not a claim of empirical dropout rates.
   const badHarvest=harvest==='failed', weakHarvest=harvest==='weak', loan=cash==='loan';
   const risk = clamp(.025 + (badHarvest?.10:weakHarvest?.06:0)
@@ -124,17 +141,18 @@ function drawRow(rng, teamId, index, contextIndex, mode = 'hard', streak = false
     + (weather==='storm'?.06:0) + pressure*.08, .02, .88);
   // Attendance is a survey observation, NOT the hidden outcome in disguise.
   // A child with regular attendance can experience a sudden dropout event.
-  const attendance = rng() < .25 ? 'irregular' : 'regular';
+  const drawnAttendance = rng() < .25 ? 'irregular' : 'regular';
+  const attendance = script?.attendance ?? drawnAttendance;
   const sampledFatal = rng() < risk;
   const values = {harvest,cash,attendance,weather};
-  const fatal = mode === 'hard' ? sampledFatal : teachingFatal(values, streak);
+  const fatal = mode === 'hard' ? sampledFatal : teachingFatal(values, streak, drought && mode === 'medium');
   // Risks shows the outcome; Indicators keeps only the survey observations.
   if (mode === 'easy' && fatal) values.attendance = 'dropout';
   const initialCategory = pick(rng,visibleCategories);
   return {id:`${teamId}${index+1}`,teamId,roundIndex:index,contextId:context.id,
     initialCategory:script?.initialCategory ?? initialCategory,
     targetCues:Object.fromEntries(categories.map(c=>[c,makeCue(teamId,index,c,values[c],context.id)])),
-    fatal,...(streak&&{streak:true}),...(script?.hallucinate&&{hallucinate:true})};
+    fatal,...(streak&&{streak:true}),...(drought&&{drought:true}),...(script?.hallucinate&&{hallucinate:script.hallucinate}),...(script?.hint&&{hint:script.hint})};
 }
 function updateContext(previous,action='go') {
   const c=previous.targetCues;
@@ -146,10 +164,11 @@ function updateContext(previous,action='go') {
 // Same monthly random draws for counterfactual action paths. Only known context changes.
 export function currentRound(pack,teamIndex,actions=[]) {
   const teamId=teamIds[teamIndex];
-  let contextIndex=(pack.seed%6+6+teamIndex)%6,row,streak=false;
+  let contextIndex=(pack.seed%6+6+teamIndex)%6,row,streak=false;const sun=[];
   for(let i=0;i<=actions.length;i++){
-    const rng=makeRng(hashSeed(pack.seed,'live',teamId,i));
-    row=drawRow(rng,teamId,i,contextIndex,pack.mode,streak,teamCScript(pack.mode,teamId,i,actions));
+    const rng=makeRng(hashSeed(pack.seed,'live',teamId,i)),drought=i>=2&&sun[i-1]&&sun[i-2];
+    row=drawRow(rng,teamId,i,contextIndex,pack.mode,streak,stagedScript(pack.mode,teamId,i,actions),drought);
+    sun.push(row.targetCues.weather.value==='sun');
     if(i<actions.length){contextIndex=updateContext(row,actions[i]);
       streak=pack.mode!=='hard'&&actions[i]==='go'&&weakLow(Object.fromEntries(['harvest','cash'].map(c=>[c,row.targetCues[c].value])));}
   }
@@ -276,11 +295,23 @@ export function createPack(seed = 15, count = 200, mode = 'hard') {
   };
 }
 
-// Staged for Team C's second month: the AI is torn, and flipping the weak harvest
-// tips it the wrong way (Help 54/46 becomes Skip 54/46). The honest poll says Help 100%.
+// Staged room advice for Team A's third month: the audience knows the boom-pull pattern the
+// archive lacks, and splits between the hinted cards still face down.
+export function hintedPoll(pack, round, revealed = []) {
+  const open = (round.hint ?? []).filter(c => !revealed.includes(c));
+  if (!open.length) return null;
+  const total = pack.teams.find(t=>t.id===round.teamId).audienceCount;
+  const counts = { go: 0, avoid: 0, harvest: 0, cash: 0, attendance: 0, weather: 0 };
+  open.forEach((c, k) => { counts[c] = Math.floor(total / open.length) + (k < total % open.length ? 1 : 0); });
+  return { counts, total, matched: 0, hinted: true };
+}
+
+// Staged AI readings. Team C's second month ('torn'): flipping the weak harvest tips it the
+// wrong way (Help 54/46 becomes Skip 54/46); the honest poll says Help 100% once both cards
+// are up. Team A's third month ('skip'): Skip 90% whatever is flipped.
 export function hallucinatedPoll(pack, round, revealed = []) {
   const total = pack.teams.find(t=>t.id===round.teamId).audienceCount;
-  const skip = revealed.includes('harvest') ? .54 : .46;
+  const skip = round.hallucinate === 'skip' ? .9 : revealed.includes('harvest') ? .54 : .46;
   const counts = { go: Math.round(total * skip), avoid: 0, harvest: 0, cash: 0, attendance: 0, weather: 0 };
   counts.avoid = total - counts.go;
   return { counts, total, matched: 0, hallucinated: true };

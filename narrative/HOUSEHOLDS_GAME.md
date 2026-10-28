@@ -95,12 +95,23 @@ The deliberately simple teaching rule is:
 | --- | --- |
 | Failed harvest AND loan | Intervene |
 | Weak harvest AND low cash, for the second month running after a Skip | Intervene |
+| Good harvest AND irregular attendance, in the first rain after two sunny months | Intervene |
 | Any other combination | Skip |
 
 One dotted indicator alone does not prove danger. Two together settle the rule.
+Storm alone does not cause dropout. Attendance is not a mandatory warning before
+failure. The teaching distribution includes both paired indicators and safe
+single-indicator cases so the audience can discover the distinction.
+
 The two-month rule also applies to Risks; weak harvest and low cash carry no dotted
 border because one such month is safe. Use the < arrow to look back at last month.
 A purple context means last month's cash was low, so it is the colour to watch.
+
+The boom-pull rule: when rain ends a drought (two sunny months), a good harvest
+pulls a child who already attends irregularly into farm work, whatever the cash.
+It applies to Indicators only, and irregular attendance has no dotted border. The
+AI's history has never seen it, so the AI says Skip there even with every card up:
+the room knows something the model does not.
 
 **Team C stages the two-month rule.** Month 1 is weak harvest + low cash (Skip is
 right). Month 2 repeats it with only LOW CASH face up. The audience's sheets say
@@ -108,9 +119,18 @@ FLIP HARVEST. The AI is deliberately confused here: HELP 54 / SKIP 46 before the
 flip, and SKIP 54 / HELP 46 after the weak harvest is shown, which is the wrong way.
 Skip is OUT. Help brings month 3 to weak harvest with enough cash. The honest
 model would say HELP 100% once both cards are up; the AI's wobble is staged.
-Storm alone does not cause dropout. Attendance is not a mandatory warning before
-failure. The teaching distribution includes both paired indicators and safe
-single-indicator cases so the audience can discover the distinction.
+
+**Team A stages the boom-pull rule.** Months 1 and 2 are sunny. Month 3 brings
+rain (the drought is over; the rep has to notice this), with only GOOD HARVEST
+face up; cash is low but stays hidden and attendance is irregular. The audience
+splits 50/50 between FLIP WEATHER and FLIP ATTENDANCE, then asks for whichever is
+still down. The AI says SKIP 90% whatever is flipped. Skip is OUT. Help keeps
+month 4 at good harvest, enough cash, regular attendance and rain (pink, since
+month 3's cash was low and the team helped).
+
+Team A's month 1 shows the same green GOOD HARVEST, so Team A's phones split
+WEATHER / ATTENDANCE there too. Flipping in month 1 spends a coin the team will
+want in month 3.
 
 Play a turn as follows:
 

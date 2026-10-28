@@ -43,7 +43,14 @@ function teachingFatal(values, streak = false, boomPull = false) {
 // Team A, boom pull: sun in months 1 and 2, then month 3 brings rain with a good harvest
 // face up, low cash and irregular attendance; Help there keeps month 4 at good, enough
 // and regular.
-function stagedScript(mode, teamId, index, actions) {
+// Trial run (Team A alone): month 1 opens on a failed harvest, so the facilitator can point at
+// the dashed indicator frame. Cash keeps its draw (enough), so Skip is still safe there.
+function stagedScript(mode, teamId, index, actions, trial = false) {
+  const script = teamScript(mode, teamId, index, actions);
+  return trial && mode === 'medium' && index === 0 ? { ...script, harvest: 'failed', initialCategory: 'harvest' } : script;
+}
+
+function teamScript(mode, teamId, index, actions) {
   if (mode !== 'medium') return null;
   if (teamId === 'C') {
     if (index === 0) return { harvest: 'weak', cash: 'low' };
@@ -167,7 +174,7 @@ export function currentRound(pack,teamIndex,actions=[]) {
   let contextIndex=(pack.seed%6+6+teamIndex)%6,row,streak=false;const sun=[];
   for(let i=0;i<=actions.length;i++){
     const rng=makeRng(hashSeed(pack.seed,'live',teamId,i)),drought=i>=2&&sun[i-1]&&sun[i-2];
-    row=drawRow(rng,teamId,i,contextIndex,pack.mode,streak,stagedScript(pack.mode,teamId,i,actions),drought);
+    row=drawRow(rng,teamId,i,contextIndex,pack.mode,streak,stagedScript(pack.mode,teamId,i,actions,pack.trial),drought);
     sun.push(row.targetCues.weather.value==='sun');
     if(i<actions.length){contextIndex=updateContext(row,actions[i]);
       streak=pack.mode!=='hard'&&actions[i]==='go'&&weakLow(Object.fromEntries(['harvest','cash'].map(c=>[c,row.targetCues[c].value])));}
@@ -268,14 +275,14 @@ function inspectionWeights(pool, round, revealedSet, mode = 'hard') {
   return choices;
 }
 
-export function createPack(seed = 15, count = 200, mode = 'hard') {
+export function createPack(seed = 15, count = 200, mode = 'hard', { trial = false } = {}) {
   if (!['easy', 'medium', 'hard'].includes(mode)) throw new Error(`Unsupported household mode: ${mode}`);
   const normalizedSeed = Number.isFinite(seed) ? Math.trunc(seed) : 15;
   const sheetCount = Number.isFinite(count) ? Math.max(1, Math.trunc(count)) : 200;
   const packId = mode === 'hard' ? `HH2-${normalizedSeed}-${sheetCount}` : `HH4-${mode}-${normalizedSeed}-${sheetCount}`;
   const historiesByTeam = {};
   const teams = teamIds.map((teamId, teamIndex) => {
-    const rounds=Array.from({length:4},(_,i)=>currentRound({seed:normalizedSeed,mode},teamIndex,Array(i).fill('go')));
+    const rounds=Array.from({length:4},(_,i)=>currentRound({seed:normalizedSeed,mode,trial},teamIndex,Array(i).fill('go')));
     const archiveRng=makeRng(hashSeed(normalizedSeed,'archive',teamId));
     historiesByTeam[teamId]=Array.from({length:3600},(_,i)=>drawRow(archiveRng,teamId,i,i%6,mode));
     return {id:teamId,rounds,audienceCount:Math.floor(sheetCount/teamIds.length)+(teamIndex<sheetCount%teamIds.length?1:0)};
@@ -285,6 +292,7 @@ export function createPack(seed = 15, count = 200, mode = 'hard') {
     mode,
     packId,
     seed: normalizedSeed,
+    trial,
     sheetCount,
     roundCount: 4,
     revealTokens: 3,

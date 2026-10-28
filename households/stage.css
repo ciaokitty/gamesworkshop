@@ -149,6 +149,7 @@ body.hh-stage .team .track .was{position:absolute;top:-6px;bottom:-6px;width:3px
 body.hh-stage .team .poll-row .shift{font-style:normal;color:var(--shift);text-align:right}
 
 /* Notes: every team's Patterns notepad on one sheet, one team after another */
+.hh-notes .sum-box{width:min(760px,100%)}
 .hh-notes .note-page{margin-top:14px;min-height:140px;border:2px solid var(--ink)}
 .hh-notes .note-page p{margin:0;white-space:pre-wrap}
 .hh-notes .note-page b{display:inline-flex;align-items:center;gap:8px;margin-right:14px;font:400 26px/1 var(--pixel);letter-spacing:.06em;text-transform:uppercase;vertical-align:2px}

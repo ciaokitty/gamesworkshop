@@ -14,6 +14,13 @@ Room size = phones + bots. Phones take the lowest free sheets; bots take the res
 Bots vote over 1-12 s. Rover/Households use 85% turnout. Sentence bots always vote when they have a match.
 Pages served by the plain 8684 server find no `/api/room` and keep their simulated polls.
 
+Updates are pushed, not polled: phones, game screens and the landing page each hold one
+server-sent events stream (`/api/room/events`, or `?pid=` for a phone's own view). A phone gets a
+message only when its own view changes (a vote opens or closes, its status moves, its ballot lands,
+its sheet changes); game screens get every ballot. Idle streams carry a keep-alive every 20 s, a
+dropped phone shows *Reconnecting...* until the browser reconnects, and a connected phone keeps
+its seat.
+
 ## Votes
 
 | Game | Who | Phone shows | Host shows |

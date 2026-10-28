@@ -4,7 +4,7 @@ const policies=['skip','firstTwo','decision','audience','attendance'];
 const result=Object.fromEntries(policies.map(p=>[p,{finished:0,checks:0,support:0}]));
 let rows=0,dropouts=0,flagged=0,flaggedSafe=0,unflaggedDropout=0,loanSafe=0,loanFatal=0,regularDropouts=0;const inspections={harvest:0,cash:0,attendance:0,weather:0};
 function play(pack,team,policy){let tokens=3,support=2,checks=0,used=0;
- const actions=[];for(let month=0;month<6;month++){const row=currentRound(pack,'ABCD'.indexOf(team.id),actions);let shown=[row.initialCategory],p=poll(pack,row,shown,tokens);
+ const actions=[];for(let month=0;month<pack.roundCount;month++){const row=currentRound(pack,'ABCD'.indexOf(team.id),actions);let shown=[row.initialCategory],p=poll(pack,row,shown,tokens);
   if((policy==='audience'||policy==='attendance')&&tokens>0){
    const choice=policy==='attendance'?'attendance':Object.entries(p.counts).sort((a,b)=>b[1]-a[1])[0][0];
    if(categories.includes(choice)&&!shown.includes(choice)){shown.push(choice);tokens--;checks++;p=poll(pack,row,shown,tokens)}

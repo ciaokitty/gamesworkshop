@@ -19,7 +19,7 @@ The old `/households/game.html` link redirects to Household Judgement.
 - Risks: all cards visible, room advises Skip/Intervene.
 - Indicators: AI gives a decision estimate; Audience suggests cards to check.
 - Judgement: AI gives both; Audience spends a human consultation, no machine poll.
-- Six turns per team, three extra card reveals across the run. Judgement adds
+- Four turns per team, three extra card reveals across the run. Judgement adds
   three separate consultations and keeps its two protective interventions.
 - Risks: only Dropout is filled and signals death. No dotted indicators.
 - Indicators: Dropout never appears; failed harvest + loan form the dotted pair.

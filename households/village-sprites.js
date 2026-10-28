@@ -9,7 +9,7 @@ export const PAL = {
   x:'#e0524a', X:'#9e2f2c', e:'#a8825a', E:'#7a5a3a', n:'#4f7fbf', N:'#34578a', z:'#a3acb5', Z:'#6b737c',
   j:'#ef8e3c', J:'#b8621f', v:'#3f8f6a', V:'#2a6a4c', u:'#4a90c8', a:'#ffffff', i:'#f7e08a',
   f:'#e7a7a0', F:'#b97a74', t:'#ff6b6b', T:'#b84545',
-  A:'#b0703c', I:'#84522a', U:'#e48aa0', '1':'#2b2e4a', '2':'#454a72', '3':'#f2d34b', '4':'#e9dcc0', '5':'#d8c6a0', '6':'#a58ad0'
+  A:'#b0703c', I:'#84522a', U:'#e48aa0', '1':'#2b2e4a', '2':'#454a72', '3':'#f2d34b', '4':'#e9dcc0', '5':'#d8c6a0', '6':'#a58ad0', '7':'#ecc490', '8':'#dfb47f'
 };
 export const TEAMS = [
   {id:'A', t:'#ff6b6b', T:'#b84545', name:'Cap'},
@@ -17,6 +17,8 @@ export const TEAMS = [
   {id:'C', t:'#ffbe0b', T:'#b88600', name:'Headband'},
   {id:'D', t:'#ff70a6', T:'#b8467a', name:'Beanie'}
 ];
+// The TEAMS child each map lane shows. The trial run has a single household: the Beanie kid, in pink.
+export const LOOK = new URLSearchParams(globalThis.location?.search).has('trial') ? [3] : [0, 1, 2];
 
 // --- a tiny pixel canvas: draw with shapes, then auto-outline ---
 function grid(w, h) { const g = Array.from({length:h}, () => Array(w).fill('.')); g.w = w; g.h = h; return g; }
@@ -103,6 +105,17 @@ function kid(team, frame) {
   stamp(g, LEGS[frame], 0, 15);
   return rows(outline(g));
 }
+// Sitting on the ground facing right, bag behind; frame 1 hugs one knee up.
+const SIT_LEGS = [
+  ['..bbbbbtttt....', '...bb.ppppppp...', '......pppppppKK.'],
+  ['...........pp..', '..........ppp..', '..bbbbbttttpp...', '...bb.pppp..pp..', '......pppp..KKK.']];
+function kidSit(team, frame) {
+  const g = grid(16, 21);
+  stamp(g, HEADS[team], 0, 3);
+  stamp(g, TORSO.slice(0, 4), 0, 12);
+  stamp(g, SIT_LEGS[frame], 0, 19 - SIT_LEGS[frame].length);
+  return rows(outline(g));
+}
 function kidSad(team) { // stopped, head down, bag dropped
   const g = grid(14, 21);
   const head = HEADS[team].map(r => r.replace('k', 's'));
@@ -175,6 +188,23 @@ function tin() { // D: ochre house with a tin roof and a haystack
   return rows(outline(g));
 }
 
+function cottage() { // trial home: small whitewashed cottage with a brown roof and woodwork
+  const g = grid(30, 26);
+  for (let y = 3; y <= 11; y++) {
+    const inset = 11 - y + 1;
+    for (let x = inset; x < 30 - inset; x++) px(g, x, y, ((x + (y % 2) * 2) % 4 === 0) ? 'B' : 'b');
+  }
+  hl(g, 9, 3, 12, 'B'); hl(g, 0, 11, 30, 'B');
+  rect(g, 21, 0, 3, 5, 'W'); hl(g, 21, 0, 3, 'B');
+  rect(g, 4, 12, 22, 12, 'w'); vl(g, 4, 12, 12, 'W'); vl(g, 5, 12, 12, 'W'); hl(g, 4, 23, 22, 'W');
+  vl(g, 4, 12, 12, 'b'); vl(g, 25, 12, 12, 'b'); hl(g, 4, 12, 22, 'B');
+  rect(g, 16, 15, 6, 9, 'b'); rect(g, 17, 16, 4, 3, 'B'); rect(g, 17, 20, 4, 3, 'B'); px(g, 20, 19, 'o');
+  rect(g, 8, 15, 5, 5, 'B'); rect(g, 9, 16, 3, 3, 'q'); px(g, 10, 16, 'B'); px(g, 10, 18, 'B'); hl(g, 9, 17, 3, 'B'); hl(g, 7, 20, 7, 'b');
+  stamp(g, ['.f.', 'fGf', 'bbb'], 7, 21);
+  hl(g, 15, 24, 8, 'c');
+  return rows(outline(g));
+}
+
 // --- school ---
 export const FONT = {
   A:'010101111101101', B:'110101110101110', C:'011100100100011', D:'110101101101110', E:'111100110100111', F:'111100110100100',
@@ -226,6 +256,20 @@ function camp(beat = 0) {
   return rows(outline(g));
 }
 
+// --- hedgehog: after a 16 x 12 pixel-art reference, shrunk to 12 x 9; outlined in dark brown, not black ---
+const HEDGEHOG = [ // facing left: two spike tips, bead eye level with the nose, pale belly
+  '.....h.h....',
+  '....hbhbhh..',
+  '..hHbBbdbBh.',
+  '..hbdbBdbdBh',
+  '.h77HbdBdBdh',
+  '.7777HdBdBdh',
+  'kk7k77HdHddh',
+  '.h8888888Hh.'];
+const hedgehog = frame => [...HEDGEHOG, frame ? '...h..H..H..' : '..hh.H..H...']; // frame swaps the feet for a trot
+const HEDGEHOG_BALL = ['..h.h....', '.hbhbhh..', 'hbBbdbBh.', 'hdbBdbdBh', 'hBdbdBdbh', '.hdBdBdh.', '..hhhhh..']; // curled up mid-hop
+const mirror = r => r.map(row => [...row].reverse().join(''));
+
 // --- scenery ---
 function tree(seed = 0) {
   const g = grid(22, 26);
@@ -264,13 +308,11 @@ function cloud() { const g = grid(26, 10); disc(g, 7, 6, 3, 'w'); disc(g, 12, 4,
 const BIRD = [['k...k', '.k.k.', '..k..'], ['.....', 'kk.kk', '..k..']];
 const STAR = ['....a....', '....i....', '...iai...', 'iiiaaaiii', '.iiaaaii.', '..iiaii..', '.ii...ii.', '.i.....i.', '.........'];
 
-// Seasonal paddy tiles, 12 x 10, one per month. Every lane shows the same fields,
+// Seasonal paddy tiles, 12 x 10, one per month: flooded, growing, ripening, harvested. Every lane shows the same fields,
 // so the scenery marks time and never reveals a household's cards.
 export const FIELDS = [
   ['EEEEEEEEEEEE','eeeeeeeeeeee','eeeEeeeeeEee','EEEEEEEEEEEE','eeeeeeeeeeee','eeEeeeeEeeee','EEEEEEEEEEEE','eeeeeeeeeeee','eeeeeEeeeeee','EEEEEEEEEEEE'],
-  ['..L...L...L.','EEgEEEgEEEgE','eeeeeeeeeeee','eeeeeeeeeeee','..L...L...L.','EEgEEEgEEEgE','eeeeeeeeeeee','eeeeeeeeeeee','..L...L...L.','EEgEEEgEEEgE'],
   ['.L..L..L..L.','LgL.gL.gLLg.','gGg.gg.gGgg.','eeeeeeeeeeee','..L..L..L..L','.LgL.gL.gLLg','.gGg.gg.gGgg','eeeeeeeeeeee','.L..L..L..L.','LgLLgLLgLLgL'],
-  ['L.L..L.L..L.','gLg.LgLg.Lg.','gGgLgGgGLgGL','GgGgGgGgGgGg','gGgGgGgGgGgG','GgGgGgGgGgGg','gGgGgGgGgGgG','GGgGGgGGgGGg','gGGgGGgGGgGG','EEEEEEEEEEEE'],
   ['o..o..o..o..','oOo.oOooOo.o','OgoOoOgoOoOo','gOgoOgoOgoOg','oGoOgOoGoOgO','GoGgoGgoGgoG','gGoGgGoGgGoG','GgGGgGGgGGgG','gGGgGGgGGgGG','EEEEEEEEEEEE'],
   ['............','.Y..Y...Y..Y','.Y.YY.Y.Y.YY','eeeeeeeeeeee','...Y...Y..Y.','Y.YY.Y.YY.Y.','eeeeeeeeeeee','.Y...Y..Y...','YY.Y.Y.YY.Y.','eeeeeeeeeeee']
 ];
@@ -361,13 +403,6 @@ const DOG_SIT = [
   'AA.AAAAAAAAAA..',
   'AAAAAAAAIAAIAA.',
   '.AAAAAAAAIAIAA.'];
-const DOG_SLEEP = [
-  '....AAA...........',
-  '..AA4AAAAAAAAA....',
-  '.AA44AAAAAAAAAAA..',
-  '.A4kk44AAAAIAAAAA.',
-  '.444444444AAAAAAA.',
-  '..44444444444AAAA.'];
 const CAT = { // compact body, round head, tail curling up behind
   idle: ['........1..1', '1.......1111', '1.......1313', '.1.122211111', '..11111111..', '..1111111...', '..1.1..1.1..'],
   crouch: ['............', '........1..1', '11......1111', '..1.....1313', '..1222111111', '.11111111111', '.1.1....1.1.'],
@@ -423,7 +458,7 @@ const CHICK = ['.ii.', 'oik.', '.iii', '.iiI'.replace('I', 'i'), '.o.o'];
 function tweak(rows, edits) { const g = rows.map(r => [...r]); for (const [x, y, c] of edits) { if (g[y]) g[y][x] = c; } return g.map(r => r.join('')); }
 export const ANIMALS = {
   dogSit: [ani(DOG_SIT), ani(tweak(DOG_SIT, [[0, 9, '.'], [0, 8, 'A'], [1, 8, 'A'], [1, 9, '.']]))],
-  dogSleep: [ani(['..................', ...DOG_SLEEP]), ani(['.......AAAAAAA....', ...DOG_SLEEP.map((r, i) => i === 1 ? '..AA4AAAAAAAAAAA..' : r)])], // breathing: the back rises
+  hedgehog: { walk: [hedgehog(0), hedgehog(1)], right: [mirror(hedgehog(0)), mirror(hedgehog(1))], ball: HEDGEHOG_BALL },
   cat: Object.fromEntries(Object.entries(CAT).map(([k, r]) => [k, ani(r)])),
   cow: [ani(COW), ani(tweak(COW, [[14, 9, '.'], [14, 8, '.'], [14, 7, 'w'], [14, 10, '.']]))],
   cowBrown: [COW, tweak(COW, [[14, 9, '.'], [14, 8, '.'], [14, 7, 'w'], [14, 10, '.']])].map(r => ani(r.map(row => row.replace(/w/g, 'A').replace(/K/g, 'I').replace(/f/g, 'm')))),
@@ -450,8 +485,6 @@ export const FLOWERS = [
   ['.f.f.', 'fFfFf', '.fGf.', '..G..']
 ];
 
-export const ZZZ = ['666', '..6', '.6.', '6..', '666'];
-
 // --- build the sprite catalogue ---
 export const SPR = {
   house: [hut(), tiled(), pucca(), tin()],
@@ -459,6 +492,8 @@ export const SPR = {
   camp: [camp(0), camp(1)],
   kids: Object.fromEntries(['A', 'B', 'C', 'D'].map(t => [t, [0, 1, 2, 3].map(f => kid(t, f))])),
   kidSad: Object.fromEntries(['A', 'B', 'C', 'D'].map(t => [t, kidSad(t)])),
+  kidSit: Object.fromEntries(['A', 'B', 'C', 'D'].map(t => [t, [0, 1].map(f => kidSit(t, f))])),
+  cottage: cottage(),
   bag: rows(outline(bag())),
   tree: [tree(0), tree(1)], sapling: [sapling(0), sapling(1)], bush: bush(), well: well(), handpump: handpump(), cloud: cloud(), bird: BIRD, star: STAR
 };

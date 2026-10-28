@@ -6,6 +6,7 @@ import { label } from './pixel-cards.js';
 
 const teams = document.querySelector('#teams');
 const css = Object.assign(document.createElement('link'), { rel: 'stylesheet', href: new URL('stage.css', import.meta.url).href });
+export const ready = new Promise(done => { css.onload = css.onerror = done; }); // village-map lifts the loading screen once this is in
 document.head.append(css);
 document.body.classList.add('hh-stage');
 document.documentElement.classList.add('hh-stage');

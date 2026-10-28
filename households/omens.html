@@ -10,8 +10,6 @@
 <button class="corner" id="theme">LIGHT</button>
 <main class="title-screen">
   <h1 class="logo">OMENS</h1>
-  <p class="sub">HOUSEHOLDS</p>
-  <div class="omen-row" id="omens" aria-hidden="true"></div>
   <nav aria-label="Menu"><ol class="menu">
     <li><a href="/households/icons.html"><span class="num">1</span><span class="name">ICONS</span><small>HARVEST - CASH - ATTENDANCE - WEATHER</small></a></li>
     <li><a href="/audience"><span class="num">2</span><span class="name">AUDIENCE SHEET</span><small>THE HOUSEHOLDS DATASHEET</small></a></li>
@@ -20,14 +18,14 @@
   </ol></nav>
 </main>
 <script type="module">
-import { pixelIcons } from '/households/pixel-cards.js';
+import { backgroundMusic } from '/households/music.js';
 const $ = s => document.querySelector(s);
+backgroundMusic('assets/audio/bachs-chips-loop.ogg', 0.5); // Bach's Chips, Dylann Taylor
 let theme = 'dark';
 try { theme = localStorage.getItem('paperweights.theme.v1') === 'light' ? 'light' : 'dark'; } catch {}
 const paintTheme = () => { document.documentElement.dataset.theme = theme; $('#theme').textContent = theme === 'dark' ? 'LIGHT' : 'DARK'; };
 $('#theme').onclick = () => { theme = theme === 'dark' ? 'light' : 'dark'; try { localStorage.setItem('paperweights.theme.v1', theme); } catch {} paintTheme(); };
 paintTheme();
-$('#omens').innerHTML = [pixelIcons.harvest.good, pixelIcons.cash.enough, pixelIcons.attendance.regular, pixelIcons.weather.storm].join('');
 
 // A game menu: arrows or hover move the cursor, Enter or 1-4 open.
 const items = [...document.querySelectorAll('.menu a')];

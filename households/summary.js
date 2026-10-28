@@ -1,14 +1,14 @@
 // Households (Indicators mode): the facilitator's Finish button ends the game for every team and
-// shows how each team's representative used the AI and the audience, month by month.
+// shows each team's HELP/SKIP calls month by month beside what following only the AI would have done.
 // competitive.js keeps the decision log; this only reads window.paperweights.state().
-import { TEAMS } from './village-sprites.js';
+import { TEAMS, LOOK } from './village-sprites.js';
 import { SFX } from './sound.js';
 import { label } from './pixel-cards.js';
 import * as modal from './team-modal.js';
+import { currentRound, poll } from './model.js';
 
-const MONTHS = 6;
+const MONTHS = 4;
 const CHOICE = { go: 'SKIP', avoid: 'HELP' };
-const up = c => c.toUpperCase();
 const esc = t => String(t).replace(/[&<>"]/g, c => `&#${c.charCodeAt(0)};`);
 
 // 0 = didn't ask, 0.5 = asked but went their own way, 1 = went with the advice.
@@ -19,14 +19,23 @@ function aiText(d) {
   if (!d.ai) return 'AI: not asked';
   return `AI said ${d.ai.map(a => CHOICE[a]).join(' / ')} - ${d.ai.includes(d.action) ? 'followed' : 'went against it'}`;
 }
-function audText(d) {
-  if (!d.aud) return 'Audience: not asked';
-  const top = d.flips.find(f => f.aud)?.cat ?? d.audTop?.[0];
-  if (d.flips.some(f => f.aud)) return `Audience picked ${up(top)} - flipped it`;
-  return top ? `Audience picked ${up(top)} - didn't flip it` : 'Audience asked - no votes';
-}
-const flipText = d => d.flips.length ? `Flipped ${d.flips.map(f => up(f.cat)).join(', ')}` : 'No flips';
 const monthText = d => `Month ${d.month}: ${CHOICE[d.action]}${d.out ? ' - OUT' : ''}`;
+
+// The prediction: replay the same team's months asking only the AI (no flips) and doing what it says.
+// The model is seeded, so this is exactly what that player would have met.
+function aiOnly(pack, k) {
+  const legs = [], path = [];
+  for (let month = 1; month <= MONTHS; month++) {
+    const r = currentRound(pack, k, legs), p = poll(pack, r, [r.initialCategory], 0);
+    const action = p.counts.avoid > p.counts.go ? 'avoid' : 'go', out = (action === 'avoid') !== r.fatal;
+    path.push({ month, action, out });
+    if (out) break;
+    legs.push(action);
+  }
+  return path;
+}
+const aiOnlyText = d => `AI only: ${d ? `${CHOICE[d.action]}${d.out ? ' - OUT' : ''}` : 'already out'}`;
+const youText = d => d ? `Team: ${CHOICE[d.action]}${d.out ? ' - OUT' : ''}` : 'Team: already out';
 
 function verdict(t) {
   const log = t.log;
@@ -35,12 +44,7 @@ function verdict(t) {
   const lean = d => aiScore(d) + audScore(d), half = Math.ceil(log.length / 2);
   const avg = a => a.reduce((s, d) => s + lean(d), 0) / (a.length || 1);
   const drift = log.length < 2 ? 0 : avg(log.slice(half)) - avg(log.slice(0, half));
-  const trend = drift > 0.25 ? 'leaned on advice more over time' : drift < -0.25 ? 'leaned on advice less over time' : !ai.length && !aud.length ? 'went their own way' : 'steady';
-  return [
-    `AI asked ${ai.length}/${log.length}, followed ${ai.filter(d => aiScore(d) === 1).length}`,
-    `Audience asked ${aud.length}/${log.length}, followed ${aud.filter(d => audScore(d) === 1).length}`,
-    trend[0].toUpperCase() + trend.slice(1),
-  ];
+  return drift > 0.25 ? 'Leaned on advice more over time' : drift < -0.25 ? 'Leaned on advice less over time' : !ai.length && !aud.length ? 'Went their own way' : 'Steady';
 }
 
 // Monotone cubic (Fritsch-Carlson): smooth, but never overshoots 0 or 1 between months.
@@ -63,33 +67,34 @@ function smooth(pts) {
   return d;
 }
 
-const W = 320, H = 200, L = 92, R = 300, T = 22, B = 156;
+const W = 320, H = 136, L = 92, R = 300, T = 34, B = 104;
 const X = month => L + (R - L) * (month - 1) / (MONTHS - 1);
 const Y = v => B - (B - T) * v;
-const SERIES = [
-  { key: 'ai', name: 'AI', score: aiScore, nudge: -2.5 }, // nudged apart so equal values stay visible
-  { key: 'aud', name: 'Audience', score: audScore, nudge: 2.5 },
-];
+const LEVEL = { avoid: 1, go: 0 };
 
-function chart(t, k) {
+// A path's line, its month dots and, if it ended OUT, a dashed marker at that month.
+function path(cls, list) {
+  const pts = list.map(d => [X(d.month), Y(LEVEL[d.action])]), last = list.at(-1);
+  const out = last?.out ? `<line class="end" x1="${X(last.month)}" x2="${X(last.month)}" y1="${T - 8}" y2="${B}"/>` : '';
+  return `<g class="path ${cls}">${out}<path class="line" d="${smooth(pts)}" pathLength="1"/>${pts.map(([x, y]) => `<circle class="dot" cx="${x}" cy="${y}" r="4"/>`).join('')}</g>`;
+}
+
+// The blue AI-only line sits under the white line of what the team did, so where they agree
+// the white line shows a blue edge.
+function chart(t, k, ai) {
   const log = t.log;
-  const grid = [[1, 'FOLLOWED'], [0.5, 'ASKED'], [0, 'NOT ASKED']].map(([v, name]) =>
+  const grid = [[1, 'HELP'], [0, 'SKIP']].map(([v, name]) =>
     `<line class="grid" x1="${L}" x2="${R}" y1="${Y(v)}" y2="${Y(v)}"/><text class="ylab" x="${L - 10}" y="${Y(v) + 5}" text-anchor="end">${name}</text>`).join('');
   const xs = Array.from({ length: MONTHS }, (_, i) => `<text class="xlab" x="${X(i + 1)}" y="${B + 24}" text-anchor="middle">${i + 1}</text>`).join('');
-  const lines = SERIES.map(s => {
-    const pts = log.map(d => [X(d.month), Y(s.score(d)) + s.nudge]);
-    const dots = pts.map(([x, y]) => `<circle class="dot" cx="${x}" cy="${y}" r="4.5"/>`).join('');
-    return `<g class="series ${s.key}"><path class="line" d="${smooth(pts)}" pathLength="1"/>${dots}</g>`;
-  }).join('');
-  const last = log.at(-1);
-  const end = !last ? '' : last.out
-    ? `<g class="out"><line x1="${X(last.month)}" x2="${X(last.month)}" y1="${T - 8}" y2="${B}"/><text x="${X(last.month)}" y="${T - 10}" text-anchor="middle">OUT</text></g>`
-    : '';
-  const hits = log.map(d => `<rect class="hit" tabindex="0" data-month="${d.month}" x="${X(d.month) - (R - L) / (MONTHS - 1) / 2}" y="${T - 14}" width="${(R - L) / (MONTHS - 1)}" height="${B - T + 40}" aria-label="${esc(`Team ${t.id}. ${monthText(d)}. ${aiText(d)}. ${audText(d)}. ${flipText(d)}.`)}"/>`).join('');
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Team ${t.id}: how much it leaned on the AI and the audience each month">
-    ${grid}${xs}<text class="xlab axis" x="${(L + R) / 2}" y="${H - 2}" text-anchor="middle">MONTH</text>
+  const last = log.at(-1), aiLast = ai.at(-1), both = last?.out && aiLast.out && last.month === aiLast.month;
+  const tag = (cls, d, text) => `<text class="out-label${cls}" x="${X(d.month)}" y="${T - 10}" text-anchor="middle">${text}</text>`;
+  const out = (last?.out ? tag('', last, 'OUT') : '') + (aiLast.out && !both ? tag(' ai', aiLast, 'AI OUT') : '');
+  const months = Math.max(log.length, ai.length), w = (R - L) / (MONTHS - 1);
+  const hits = Array.from({ length: months }, (_, i) => `<rect class="hit" tabindex="0" data-month="${i + 1}" x="${X(i + 1) - w / 2}" y="${T - 14}" width="${w}" height="${B - T + 38}" aria-label="${esc(`Team ${t.id}. Month ${i + 1}. ${youText(log[i])}. ${log[i] ? aiText(log[i]) + '. ' : ''}${aiOnlyText(ai[i])}.`)}"/>`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Team ${t.id}: HELP or SKIP each month, beside what following only the AI would have done">
+    ${grid}${xs}<text class="ylab" x="${L - 24}" y="${B + 24}" text-anchor="end">MONTH</text>
     <line class="cross" x1="0" x2="0" y1="${T - 8}" y2="${B}" visibility="hidden"/>
-    ${lines}${end}<g class="hits">${hits}</g></svg>`;
+    ${path('ai-path', ai)}${path('you', log)}${out}<g class="hits">${hits}</g></svg>`;
 }
 
 function result(t) {
@@ -98,18 +103,12 @@ function result(t) {
   return `STOPPED AT MONTH ${t.round}`;
 }
 
-function panel(t, k) {
-  const lines = verdict(t);
-  return `<section class="sum-team" data-k="${k}" style="--team:${TEAMS[k].t}">
+function panel(t, k, ai) {
+  return `<section class="sum-team" data-k="${k}" style="--team:${TEAMS[LOOK[k]].t}">
     <h3><span class="chip"></span>Team ${t.id}<small>${result(t)}</small></h3>
-    ${chart(t, k)}
-    <ul class="verdict">${(Array.isArray(lines) ? lines : [lines]).map(l => `<li>${esc(l)}</li>`).join('')}</ul>
+    ${chart(t, k, ai)}
+    <p class="verdict">${esc(verdict(t))}</p>
   </section>`;
-}
-
-function table(teams) {
-  const rows = teams.flatMap(t => t.log.map(d => `<tr><td>Team ${t.id}</td><td>${d.month}</td><td>${CHOICE[d.action]}${d.out ? ' (OUT)' : ''}</td><td>${esc(aiText(d))}</td><td>${esc(audText(d))}</td><td>${esc(flipText(d))}</td></tr>`));
-  return `<details class="sum-table"><summary>Table</summary><table><thead><tr><th>Team</th><th>Month</th><th>Choice</th><th>AI</th><th>Audience</th><th>Flips</th></tr></thead><tbody>${rows.join('') || '<tr><td colspan="6">No decisions recorded</td></tr>'}</tbody></table></details>`;
 }
 
 const overlay = Object.assign(document.createElement('div'), { className: 'hh-summary', hidden: true });
@@ -120,21 +119,21 @@ document.body.append(overlay);
 const tip = Object.assign(document.createElement('div'), { className: 'sum-tip', hidden: true });
 
 function show() {
-  const state = window.paperweights.state();
+  const state = window.paperweights.state(), pack = window.paperweights.pack();
+  const ai = state.teams.map((_, k) => aiOnly(pack, k));
   overlay.innerHTML = `<div class="sum-box">
     <div class="sum-head"><h2>How each team decided</h2><button class="modal-close" aria-label="Back to the map" title="Back to the map">${label('X')}</button></div>
-    <div class="sum-legend"><span class="key ai">AI</span><span class="key aud">Audience</span><span class="note">Higher = leaned on that advice more</span></div>
-    <div class="sum-teams">${state.teams.map(panel).join('')}</div>
-    ${table(state.teams)}
+    <div class="sum-legend"><span class="key you">What the team did</span><span class="key ai">If only the AI was followed</span></div>
+    <div class="sum-teams">${state.teams.map((t, k) => panel(t, k, ai[k])).join('')}</div>
   </div>`;
   overlay.querySelector('.sum-box').append(tip);
   overlay.querySelector('.modal-close').onclick = hide;
   overlay.querySelectorAll('.sum-team').forEach(el => {
     const t = state.teams[el.dataset.k], cross = el.querySelector('.cross');
     const point = rect => {
-      const d = t.log.find(x => x.month === +rect.dataset.month), x = X(d.month);
+      const month = +rect.dataset.month, d = t.log[month - 1], x = X(month);
       cross.setAttribute('x1', x); cross.setAttribute('x2', x); cross.setAttribute('visibility', 'visible');
-      tip.innerHTML = `<b>Team ${t.id} - ${esc(monthText(d))}</b><span class="ai">${esc(aiText(d))}</span><span class="aud">${esc(audText(d))}</span><span>${esc(flipText(d))}</span>`;
+      tip.innerHTML = `<b>Team ${t.id} - ${esc(d ? monthText(d) : `Month ${month}: already out`)}</b>${d ? `<span>${esc(aiText(d))}</span>` : ''}<span class="ai-only">${esc(aiOnlyText(ai[el.dataset.k][month - 1]))}</span>`;
       tip.hidden = false;
       const box = overlay.querySelector('.sum-box').getBoundingClientRect(), r = rect.getBoundingClientRect();
       const left = Math.min(Math.max(r.left + r.width / 2 - box.left - tip.offsetWidth / 2, 8), box.width - tip.offsetWidth - 8);

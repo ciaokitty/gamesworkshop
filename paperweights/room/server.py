@@ -6,6 +6,7 @@
 /            landing page for the facilitator
 /audience    phones: get a sheet, vote when a game asks
 /api/room/*  JSON used by the landing page, phones and game screens
+/api/room/events  server-sent events: the room summary, or one phone's view with ?pid=
 Everything else is the assembled Rover/Households/Sentences site.
 """
 import argparse
@@ -28,21 +29,34 @@ import deck  # noqa: E402
 
 BOT_TURNOUT = 0.85
 BOT_DELAY = (1.0, 12.0)
+HEARTBEAT = 20     # seconds between keep-alive comments on an idle event stream
+COALESCE = 0.1     # a stream sends at most one update per this many seconds
 
 
 class Room:
     def __init__(self):
         self.lock = threading.RLock()
         self.phones = {}            # pid -> seat
-        self.seen = {}              # pid -> last poll time
+        self.seen = {}              # pid -> last time its stream or a request was seen
+        self.changed = threading.Condition(self.lock)  # woken on every version bump
         self.bots = 5
         self.sentence_deck = 'mixed'
         self.votes = {}             # 'word' or team letter -> vote
         self.ids = itertools.count(1)
-        self.version = 0
+        self._version = 0
         self.activity = None
         self.timers = []            # heap of (due, vote id, key, seat)
         threading.Thread(target=self._bot_loop, daemon=True).start()
+
+    @property
+    def version(self):
+        return self._version
+
+    @version.setter
+    def version(self, value):
+        with self.changed:
+            self._version = value
+            self.changed.notify_all()
 
     # ---- seats -----------------------------------------------------------
     @property
@@ -196,6 +210,37 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header('Cache-Control', 'no-store, max-age=0')
         super().end_headers()
 
+    def stream(self, pid=None):
+        """Server-sent events: the room summary, or one phone's view, sent only when it changes."""
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/event-stream')
+        self.end_headers()
+        seen, last = -1, None
+        try:
+            while True:
+                with ROOM.changed:
+                    woke = ROOM.changed.wait_for(lambda: ROOM.version != seen, timeout=HEARTBEAT)
+                    seen = ROOM.version
+                    if pid is None:
+                        view = ROOM.summary()
+                    else:
+                        me = ROOM.me(pid)  # also keeps the seat alive while connected
+                        # Room-wide counters change on every ballot; a phone only needs its own view.
+                        view = me and {k: v for k, v in me.items() if k not in ('version', 'size')}
+                if pid is not None and view is None:
+                    self.wfile.write(b'event: gone\ndata: {}\n\n')  # unknown seat: the phone joins again
+                    return
+                data = json.dumps(view, separators=(',', ':'))
+                if data != last:
+                    self.wfile.write(f'data: {data}\n\n'.encode())
+                    last = data
+                elif not woke:
+                    self.wfile.write(b': ping\n\n')
+                self.wfile.flush()
+                time.sleep(COALESCE)
+        except (BrokenPipeError, ConnectionResetError, OSError):
+            pass
+
     def json(self, body, code=200):
         data = json.dumps(body, separators=(',', ':')).encode()
         self.send_response(code)
@@ -233,6 +278,8 @@ class Handler(SimpleHTTPRequestHandler):
             return self.page('landing.html')
         if url.path.rstrip('/') == '/audience':
             return self.page('audience.html')
+        if url.path == '/api/room/events':
+            return self.stream(q.get('pid'))
         if url.path.startswith('/api/room'):
             with ROOM.lock:
                 return self.api_get(url.path[len('/api/room'):], q)
@@ -252,7 +299,10 @@ class Handler(SimpleHTTPRequestHandler):
             seat = ROOM.phones.get(q.get('pid'))
             return self.json(ROOM.sheet(seat)) if seat else self.json({'error': 'unknown'}, 404)
         if path == '/sentence-pack':
-            ROOM.sentence_deck = 'prior' if q.get('deck') == 'prior' else 'mixed'
+            chosen = 'prior' if q.get('deck') == 'prior' else 'mixed'
+            if chosen != ROOM.sentence_deck:
+                ROOM.sentence_deck = chosen
+                ROOM.version += 1  # phones' sheets change with the deck
             pack = deck.word_pack(ROOM.size, ROOM.sentence_deck)
             reserve = len(set(ROOM.word_bot_seats()) - set(ROOM.bot_seats()))
             if reserve:

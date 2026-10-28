@@ -232,7 +232,7 @@ export function createPack(seed = 15, count = 200, mode = 'hard') {
   const packId = mode === 'hard' ? `HH2-${normalizedSeed}-${sheetCount}` : `HH4-${mode}-${normalizedSeed}-${sheetCount}`;
   const historiesByTeam = {};
   const teams = teamIds.map((teamId, teamIndex) => {
-    const rounds=Array.from({length:6},(_,i)=>currentRound({seed:normalizedSeed,mode},teamIndex,Array(i).fill('go')));
+    const rounds=Array.from({length:4},(_,i)=>currentRound({seed:normalizedSeed,mode},teamIndex,Array(i).fill('go')));
     const archiveRng=makeRng(hashSeed(normalizedSeed,'archive',teamId));
     historiesByTeam[teamId]=Array.from({length:3600},(_,i)=>drawRow(archiveRng,teamId,i,i%6,mode));
     return {id:teamId,rounds,audienceCount:Math.floor(sheetCount/teamIds.length)+(teamIndex<sheetCount%teamIds.length?1:0)};
@@ -243,7 +243,7 @@ export function createPack(seed = 15, count = 200, mode = 'hard') {
     packId,
     seed: normalizedSeed,
     sheetCount,
-    roundCount: 6,
+    roundCount: 4,
     revealTokens: 3,
     interventions: mode === 'hard' ? 2 : 6,
     contexts: contexts.map((context) => ({ ...context })),

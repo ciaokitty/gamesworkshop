@@ -10,7 +10,7 @@ const runs=[];
 for(const seed of [15,16,17,18]){
  const url=new URL(base);url.searchParams.set('scenario','households');url.searchParams.set('mode','hard');url.searchParams.set('seed',seed);await page.goto(url.href);await page.waitForFunction(()=>window.paperweights);await page.clock.runFor(100);
  const log=[];
- for(let turn=0;turn<6;turn++)for(let i=0;i<4;i++){
+ for(let turn=0;turn<4;turn++)for(let i=0;i<4;i++){
   let t=(await state()).teams[i];if(t.status!=='deciding')continue;
   await click(i,'[data-poll=ai]');t=(await state()).teams[i];
   const first=structuredClone(t.polls.ai.counts);

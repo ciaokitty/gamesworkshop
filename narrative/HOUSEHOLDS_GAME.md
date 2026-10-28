@@ -1,7 +1,7 @@
 # Households - risks, indicators and judgement
 
 This is the facilitator's guide to the current Household game. Three stage reps,
-each supported by one audience team (A, B or C), try to get a household through six months.
+each supported by one audience team (A, B or C), try to get a household through four months.
 They share the screen but make decisions independently. The objective is to
 experience how evidence changes a decision, what remains uncertain, and who bears
 the cost of acting on incomplete information.
@@ -26,11 +26,11 @@ support this month. Intervene means provide support. A card flip only obtains
 information: it does not provide support, advance the month or prevent dropout.
 The rep must still choose an action.
 
-The map is a village: three homes stacked on the left, one lane each, six month
+The map is a village: three homes stacked on the left, one lane each, four month
 columns of fields, and the school on the right. Intervene detours to a support camp,
-Skip walks straight on, and every team still has six months to complete. The scenery
+Skip walks straight on, and every team still has four months to complete. The scenery
 is the same for every household and is not a risk measurement. On elimination the
-team shows OUT and its marker turns red; surviving all six months shows FINISHED.
+team shows OUT and its marker turns red; surviving all four months shows FINISHED.
 
 ## Colors mean context
 
@@ -114,7 +114,7 @@ Play a turn as follows:
 5. Choose Skip or Intervene. The team advances or is eliminated; it does not
    advance just because a card was flipped.
 
-There are **three extra reveals for the entire six-month run**, not three each
+There are **three extra reveals for the entire four-month run**, not three each
 month. The initial reveal is free. Pressing AI or Audience does not consume a
 bolt in Indicators; clicking a new hidden card does. Once the reveal budget is
 spent, the rep must decide from the available evidence. Revealed cards stay
@@ -151,7 +151,7 @@ certain prediction.
 
 The budgets are separate:
 
-| Resource | Allowance across six months | What spends it |
+| Resource | Allowance across four months | What spends it |
 | --- | --- | --- |
 | Audience consultations - the visible lightning bolts | Three | Pressing Audience for a spoken discussion |
 | Extra card reveals - separate from those visible bolts | Three | Flipping another hidden card |

@@ -1,7 +1,10 @@
-// Chiptune effects for the Households stage, with an on/off button in the top bar.
+// Chiptune effects and faint background music for the Households stage, with an on/off button in the top bar.
+import { backgroundMusic } from './music.js';
 const soundKey = 'households.sound.v1';
 let soundOn = true, audio = null, lastStep = 0;
 try { soundOn = localStorage.getItem(soundKey) !== 'off'; } catch {}
+const music = backgroundMusic('assets/audio/sprite-sprint-loop.ogg', 0.12); // Sprite Sprint, Dylann Taylor: kept faint under the effects
+music.set(soundOn);
 
 function context() { // created on first use, after someone has clicked, so the browser allows audio
   audio = audio || new (window.AudioContext || window.webkitAudioContext)();
@@ -86,7 +89,7 @@ export function addSoundButton(before) {
   const button = document.createElement('button');
   button.id = 'sound';
   const paint = () => { button.textContent = soundOn ? 'Sound on' : 'Sound off'; button.setAttribute('aria-pressed', soundOn); };
-  button.onclick = () => { soundOn = !soundOn; try { localStorage.setItem(soundKey, soundOn ? 'on' : 'off'); } catch {} paint(); if (soundOn) SFX.arrive(); else stopSteps(); };
+  button.onclick = () => { soundOn = !soundOn; try { localStorage.setItem(soundKey, soundOn ? 'on' : 'off'); } catch {} paint(); music.set(soundOn); if (soundOn) SFX.arrive(); else stopSteps(); };
   paint();
   before.before(button);
 }

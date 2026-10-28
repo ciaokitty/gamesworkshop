@@ -49,7 +49,7 @@ Context encodes one of three previous-survey patterns, with or without recent
 support. Each pair has a lower-pressure supported variant. Intervention protects
 the current turn and selects that supported context for the next turn. It does
 not buy permanent immunity. Current dropout truth never determines the color.
-The first context is a seeded baseline before the displayed six months.
+The first context is a seeded baseline before the displayed four months.
 
 Each team/month uses the same random draws across counterfactual action histories.
 Actions change context, not the random seed to hunt for an advantageous roll.
@@ -79,7 +79,7 @@ PDFs and the illustrative paper study are not an HH2 print pack.
 
 The familiar contour map remains. `routes.js` bends completed route segments
 according to Skip/Intervene, and the marker animates along the chosen branch.
-The map keeps six shared month bands. A decision changes the vertical trail, not
+The map keeps four shared month bands. A decision changes the vertical trail, not
 the number of months needed to finish. Teams can converge again and all use the
 same deadline.
 

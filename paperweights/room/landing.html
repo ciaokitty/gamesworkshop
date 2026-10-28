@@ -61,8 +61,8 @@ $('#bots').onchange = async e => {
   paint(s);
 };
 function paint(s) { $('#phones').textContent = s.phones; $('#size').textContent = s.size; if (!editing) $('#bots').value = s.bots; }
-async function poll() { try { paint(await fetch('/api/room').then(r => r.json())); } catch {} }
-poll(); setInterval(poll, 1500);
+// Phone and bot counts arrive as server-sent events whenever the room changes.
+new EventSource('/api/room/events').onmessage = e => paint(JSON.parse(e.data));
 </script>
 </body>
 </html>

@@ -13,6 +13,7 @@ header{position:sticky;top:0;z-index:2;background:var(--bg);border-bottom:1px so
 .top{display:flex;justify-content:space-between;align-items:baseline}
 .top .title{font-size:17px}
 #who{color:var(--dim);font-size:12px}
+#conn{margin-top:6px;color:var(--dim);font-size:12px}
 #ask{display:none;padding:14px 16px;border-bottom:1px solid var(--line);font-size:15px;line-height:1.45}
 #ask.on{display:block}
 #ask .cue{margin-top:10px}
@@ -48,6 +49,7 @@ h2{font-size:11px;color:var(--dim);letter-spacing:.08em;font-weight:400;margin:1
 <main>
 <header>
   <div class="top"><span class="title">PAPER WEIGHTS</span><span id="who"></span></div>
+  <div id="conn" role="status" hidden>Reconnecting...</div>
 </header>
 <section id="ask"></section>
 <section id="sheet"></section>
@@ -62,7 +64,7 @@ let theme = 'dark';
 try { theme = localStorage.getItem('paperweights.theme.v1') === 'light' ? 'light' : 'dark'; } catch {}
 document.documentElement.dataset.theme = theme;
 const ink = color => PALETTE[color][theme === 'dark' ? 1 : 0];
-let pid = null, me = null, sheet = null, sheetVersion = null, version = -1;
+let pid = null, me = null, sheet = null, sheetVersion = null, events = null;
 try { pid = localStorage.getItem('paperweights.audience.pid'); } catch {}
 
 // Retro card faces as on the projector: the frame colour and corner pattern carry the context.
@@ -87,36 +89,46 @@ function paintAsk() {
   if (v.kind === 'household') { const [ctx, cat, value] = v.cue.split(':'); el.innerHTML = `Team ${sheet.hhTeam}: tap the row that matches, if any<div class="cue">${hhCard(ctx, cat, value)}</div>`; }
   if (v.kind === 'rover') el.innerHTML = `Team ${me.team}: GO or AVOID?<div class="choices"><button data-choice="go" class="${v.mine === 'go' ? 'on' : ''}">GO</button><button data-choice="avoid" class="${v.mine === 'avoid' ? 'on' : ''}">AVOID</button></div>`;
 }
-async function refresh(force) {
+// The server pushes this phone's view (server-sent events) only when it changes: a vote opens or
+// closes, its status moves, this phone's ballot lands, or the sheet changes.
+async function show(next) {
   try {
-    const r = await fetch(`/api/room/me?pid=${pid}`, {cache: 'no-store'});
-    if (r.status === 404) { await join(); return refresh(true); }
-    const next = await r.json();
-    if (!force && next.version === version) return;
     const opened = next.vote && next.vote.id !== me?.vote?.id;
-    me = next; version = next.version;
+    me = next;
     if (!sheet || next.sheetVersion !== sheetVersion || sheet.seat !== next.seat) {
       sheet = await fetch(`/api/room/sheet?pid=${pid}`, {cache: 'no-store'}).then(r => r.json());
       sheetVersion = next.sheetVersion;
     }
+    if (me !== next) return; // a newer view arrived while the sheet loaded
     if (opened) scrollTo(0, 0);
     $('#who').textContent = `Sheet ${String(me.seat).padStart(3, '0')} - Team ${sheet.hhTeam}`;
     paintAsk(); paintSheet();
   } catch {}
 }
+function listen() {
+  events?.close();
+  events = new EventSource(`/api/room/events?pid=${pid}`);
+  events.onopen = () => { $('#conn').hidden = true; };
+  events.onmessage = e => show(JSON.parse(e.data));
+  // The seat is unknown (the room was cleared or the server restarted): take a new one.
+  events.addEventListener('gone', async () => { events.close(); await join(); listen(); });
+  events.onerror = () => {
+    $('#conn').hidden = false;
+    // The browser retries by itself unless the stream was refused outright.
+    if (events.readyState === EventSource.CLOSED) setTimeout(listen, 2000);
+  };
+}
 document.addEventListener('click', async e => {
   const row = e.target.closest('.row'), choice = e.target.closest('[data-choice]');
   const v = me?.vote;
-  if (choice && v?.kind === 'rover') { await post('/ballot', {pid, id: v.id, choice: choice.dataset.choice}); return refresh(true); }
+  if (choice && v?.kind === 'rover') return post('/ballot', {pid, id: v.id, choice: choice.dataset.choice});
   if (!row || !v) return;
   const ok = v.kind === 'household' && row.dataset.key === v.cue && !v.exclude?.includes(row.dataset.flip);
   if (!ok) { row.classList.remove('nope'); void row.offsetWidth; row.classList.add('nope'); return; }
   await post('/ballot', {pid, id: v.id, choice: row.dataset.flip});
-  refresh(true);
 });
 await join();
-await refresh(true);
-setInterval(refresh, 1000);
+listen();
 </script>
 </body>
 </html>
